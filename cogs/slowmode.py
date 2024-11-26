@@ -10,7 +10,6 @@ class SlowMode(commands.Cog):
     async def set_slowmode(self, ctx, seconds: int):
         """Sets the slowmode in the current channel."""
         try:
-            # Set the slowmode delay for the current channel
             await ctx.channel.edit(slowmode_delay=seconds)
             
             if seconds == 0:
