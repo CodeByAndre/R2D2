@@ -16,6 +16,7 @@ class TicTacToe(commands.Cog):
         self.board = ["⬜"] * 9  # Initialize the board with blank squares
         self.count = 0
         self.row_messages = []  # Store messages for each row
+        self.turn_message = None  # Store the turn embed message
         self.winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],
             [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
@@ -31,13 +32,13 @@ class TicTacToe(commands.Cog):
             self.turn = random.choice([self.player1, self.player2])
             self.gameOver = False
 
+            # Send the initial turn message
             embed = nextcord.Embed(
                 title="Jogo da Velha - Tic Tac Toe",
                 description=f"É a tua vez {self.turn.mention}!",
                 color=nextcord.Color.blurple()
             )
-
-            await ctx.send(embed=embed)
+            self.turn_message = await ctx.send(embed=embed)
 
             # Send each row as a separate message
             self.row_messages = []
@@ -93,7 +94,7 @@ class TicTacToe(commands.Cog):
                     description=f"{self.turn.mention} GANHOU!",
                     color=nextcord.Color.green()
                 )
-                await interaction.response.send_message(embed=embed)
+                await self.turn_message.edit(embed=embed)
                 return
 
             self.count += 1
@@ -104,7 +105,7 @@ class TicTacToe(commands.Cog):
                     description="Empate!",
                     color=nextcord.Color.yellow()
                 )
-                await interaction.response.send_message(embed=embed)
+                await self.turn_message.edit(embed=embed)
                 return
 
             # Switch turn
@@ -114,7 +115,7 @@ class TicTacToe(commands.Cog):
                 description=f"É a tua vez {self.turn.mention}!",
                 color=nextcord.Color.blurple()
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await self.turn_message.edit(embed=embed)
 
         return callback
 
