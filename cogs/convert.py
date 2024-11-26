@@ -18,14 +18,14 @@ class CurrencyConverter(commands.Cog):
         self.api_key = api_key_entry["value"]
         self.api_url = f"https://v6.exchangerate-api.com/v6/{self.api_key}/latest"
 
-    @commands.command(name="convert")
-    async def convert(self, ctx, amount: float, from_currency: str, to_currency: str):
+    @nextcord.slash_command(name="convert", description="Converts currency from one type to another.")
+    async def convert(self, interaction: nextcord.Interaction, amount: float, from_currency: str, to_currency: str):
         """Converts currency from one type to another."""
         from_currency = from_currency.upper()
         to_currency = to_currency.upper()
 
         if amount <= 0:
-            await ctx.send("O valor deve ser maior que 0.")
+            await interaction.response.send_message("O valor deve ser maior que 0.", ephemeral=True)
             return
 
         try:
@@ -45,13 +45,13 @@ class CurrencyConverter(commands.Cog):
                     )
                     embed.add_field(name="Taxa de Conversão", value=f"1 {from_currency} = {conversion_rate:.4f} {to_currency}")
                     embed.set_footer(text="Dados obtidos por: R2D2")
-                    await ctx.send(embed=embed)
+                    await interaction.response.send_message(embed=embed)
                 else:
-                    await ctx.send(f"A moeda de destino `{to_currency}` não foi encontrada.")
+                    await interaction.response.send_message(f"A moeda de destino `{to_currency}` não foi encontrada.", ephemeral=True)
             else:
-                await ctx.send("Houve um problema ao obter as taxas de câmbio. Verifique os códigos das moedas.")
+                await interaction.response.send_message("Houve um problema ao obter as taxas de câmbio. Verifique os códigos das moedas.", ephemeral=True)
         except Exception as e:
-            await ctx.send(f"Ocorreu um erro ao tentar converter: {e}")
+            await interaction.response.send_message(f"Ocorreu um erro ao tentar converter: {e}", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(CurrencyConverter(bot))

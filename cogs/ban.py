@@ -1,25 +1,27 @@
 import nextcord
 from nextcord.ext import commands
+from nextcord import Interaction
 
 class Ban(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="ban")
-    @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: nextcord.Member, *, reason=None):
+    @nextcord.slash_command(name="ban", description="Ban a member from the server.")
+    async def ban(self, interaction: Interaction, member: nextcord.Member, reason: str = "Sem razão"):
         """Bans a member from the server."""
-        if ctx.guild.me.guild_permissions.ban_members:
-            await member.ban(reason=reason)
-            await ctx.send(f"{member} foi banido/a do servidor. Razão: {reason if reason else 'Sem razão.'}")
-        else:
-            await ctx.send("Eu não tenho permissões para banir membros.")
+        if not interaction.user.guild_permissions.ban_members:
+            await interaction.response.send_message("❌ Não tens permissões para usar este comando.", ephemeral=True)
+            return
 
-    @ban.error
-    async def ban_error(self, ctx, error):
-        """Handles errors for the ban command."""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Não tens permissões para usar este comando.")
+        if not interaction.guild.me.guild_permissions.ban_members:
+            await interaction.response.send_message("❌ Eu não tenho permissões para banir membros.", ephemeral=True)
+            return
+
+        try:
+            await member.ban(reason=reason)
+            await interaction.response.send_message(f"✅ {member} foi banido/a do servidor. Razão: {reason}")
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar banir: {e}", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(Ban(bot))

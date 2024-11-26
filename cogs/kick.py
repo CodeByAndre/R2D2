@@ -5,21 +5,23 @@ class Kick(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="kick")
-    @commands.has_permissions(kick_members=True)
-    async def kick(self, ctx, member: nextcord.Member, *, motivo=None):
+    @nextcord.slash_command(name="kick", description="Expulsa um membro do servidor.")
+    async def kick(self, interaction: nextcord.Interaction, member: nextcord.Member, motivo: str = None):
         """Kicks a member from the server."""
-        if ctx.guild.me.guild_permissions.kick_members:
-            await member.kick(reason=motivo)
-            await ctx.send(f"{member} foi expulso/a do servidor. Motivo: {motivo if motivo else 'Nenhum motivo fornecido.'}")
-        else:
-            await ctx.send("Não tenho permissão para expulsar membros.")
+        if not interaction.user.guild_permissions.kick_members:
+            await interaction.response.send_message("❌ Não tens permissão para usar este comando.", ephemeral=True)
+            return
 
-    @kick.error
-    async def kick_error(self, ctx, error):
-        """Handles errors for the kick command."""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Não tens permissão para usar este comando.")
+        if not interaction.guild.me.guild_permissions.kick_members:
+            await interaction.response.send_message("❌ Não tenho permissão para expulsar membros.", ephemeral=True)
+            return
+
+        try:
+            await member.kick(reason=motivo)
+            motivo = motivo if motivo else "Nenhum motivo fornecido."
+            await interaction.response.send_message(f"✅ {member.mention} foi expulso/a do servidor.\nMotivo: {motivo}")
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar expulsar o membro: {e}", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(Kick(bot))

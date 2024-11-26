@@ -1,29 +1,45 @@
 import nextcord
 from nextcord.ext import commands
+from nextcord import Interaction, SlashOption
 
 class ReactionRole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.reaction_roles = {}
 
-    @commands.command(name="react")
-    @commands.has_permissions(manage_roles=True)
-    async def react(self, ctx, message_text: str, emoji: str, role: nextcord.Role):
+    @nextcord.slash_command(name="react", description="Creates a reaction role message.")
+    async def react(
+        self,
+        interaction: Interaction,
+        message_text: str = SlashOption(description="Text to display in the message"),
+        emoji: str = SlashOption(description="Emoji to react with"),
+        role: nextcord.Role = SlashOption(description="Role to assign"),
+    ):
         """Creates a reaction role message."""
+        if not interaction.user.guild_permissions.manage_roles:
+            await interaction.response.send_message(
+                "❌ Não tens permissão para usar este comando.", ephemeral=True
+            )
+            return
+
         embed = nextcord.Embed(
             title="ADICIONAR CARGO",
             description=f"{message_text} ({role.mention})",
-            color=nextcord.Color.blue()
+            color=nextcord.Color.blue(),
         )
         embed.set_footer(text="Reage para teres acesso ao servidor!")
 
         try:
-            message = await ctx.send(embed=embed)
+            message = await interaction.channel.send(embed=embed)
             await message.add_reaction(emoji)
             self.reaction_roles[message.id] = (str(emoji), role)
-            await ctx.message.delete()
+            await interaction.response.send_message(
+                "✅ Mensagem de reação criada com sucesso!", ephemeral=True
+            )
         except Exception as e:
-            await ctx.send(f"❌ Ocorreu um erro ao configurar a reação: {e}")
+            await interaction.response.send_message(
+                f"❌ Ocorreu um erro ao configurar a reação: {e}", ephemeral=True
+            )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: nextcord.RawReactionActionEvent):
@@ -43,7 +59,7 @@ class ReactionRole(commands.Cog):
                             channel = self.bot.get_channel(payload.channel_id)
                             await channel.send(
                                 f"{member.mention} foi adicionado ao cargo {role.name}.",
-                                delete_after=5
+                                delete_after=5,
                             )
                         except Exception as e:
                             print(f"Erro ao adicionar o cargo: {e}")
@@ -65,7 +81,7 @@ class ReactionRole(commands.Cog):
                         channel = self.bot.get_channel(payload.channel_id)
                         await channel.send(
                             f"{member.mention} foi removido do cargo {role.name}.",
-                            delete_after=5
+                            delete_after=5,
                         )
                     except Exception as e:
                         print(f"Erro ao remover o cargo: {e}")

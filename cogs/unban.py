@@ -5,28 +5,25 @@ class Unban(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="unban")
-    @commands.has_permissions(ban_members=True)
-    async def unban(self, ctx, *, user_id: int):
+    @nextcord.slash_command(name="unban", description="Desbane um utilizador do servidor pelo ID.")
+    async def unban(
+        self,
+        interaction: nextcord.Interaction,
+        user_id: str = nextcord.SlashOption(description="ID do utilizador para desbanir", required=True),
+    ):
         """Unbans a user from the server using their ID."""
         try:
-            user = await self.bot.fetch_user(user_id)
-            await ctx.guild.unban(user)
-            await ctx.send(f"{user} foi desbanido/a do servidor.")
+            user = await self.bot.fetch_user(int(user_id))
+            await interaction.guild.unban(user)
+            await interaction.response.send_message(f"{user} foi desbanido/a do servidor.", ephemeral=True)
         except nextcord.NotFound:
-            await ctx.send("Utilizador não encontrado. Verifica o ID.")
+            await interaction.response.send_message("❌ Utilizador não encontrado. Verifica o ID.", ephemeral=True)
         except nextcord.Forbidden:
-            await ctx.send("Não tenho permissões para desbanir este utilizador.")
+            await interaction.response.send_message(
+                "❌ Não tenho permissões para desbanir este utilizador.", ephemeral=True
+            )
         except Exception as e:
-            await ctx.send(f"Ocorreu um erro: {e}")
-
-    @unban.error
-    async def unban_error(self, ctx, error):
-        """Handles errors for the unban command."""
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Não tens permissão para usar este comando.")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Por favor, fornece o ID do utilizador que queres desbanir.")
+            await interaction.response.send_message(f"❌ Ocorreu um erro: {e}", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(Unban(bot))

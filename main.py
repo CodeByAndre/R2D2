@@ -1,5 +1,4 @@
 import os
-import asyncio
 from itertools import cycle
 from cryptography.fernet import Fernet
 from pymongo import MongoClient
@@ -60,7 +59,9 @@ async def change_status():
 
 @bot.event
 async def on_ready():
+    await bot.sync_application_commands()
     print(f"Bot conectado como {bot.user}!")
+    
     change_status.start()
 
     collection_reboot = db["reboot_status"]
