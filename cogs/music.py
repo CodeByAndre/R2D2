@@ -1,6 +1,7 @@
 import nextcord
 from nextcord.ext import commands
 from nextcord import FFmpegPCMAudio, Embed
+from nextcord.ui import View, Button
 import yt_dlp as ytdl
 import asyncio
 
@@ -16,6 +17,50 @@ YDL_OPTIONS = {
     'keepvideo': False,
     'postprocessors': []
 }
+
+
+class NowPlayingView(View):
+    def __init__(self, music_cog, ctx):
+        super().__init__(timeout=None)
+        self.music_cog = music_cog
+        self.ctx = ctx
+
+    @nextcord.ui.button(emoji="⏸️", style=nextcord.ButtonStyle.grey)
+    async def pause_button(self, button: Button, interaction: nextcord.Interaction):
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
+            return
+
+        if self.ctx.voice_client and self.ctx.voice_client.is_playing():
+            self.ctx.voice_client.pause()
+            await interaction.response.send_message("⏸️ Música pausada.", delete_after=2)
+        else:
+            await interaction.response.send_message("❌ Não há música tocando para pausar.", delete_after=2)
+
+    @nextcord.ui.button(emoji="▶️", style=nextcord.ButtonStyle.green)
+    async def resume_button(self, button: Button, interaction: nextcord.Interaction):
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
+            return
+
+        if self.ctx.voice_client and self.ctx.voice_client.is_paused():
+            self.ctx.voice_client.resume()
+            await interaction.response.send_message("▶️ Música retomada.", delete_after=2)
+        else:
+            await interaction.response.send_message("❌ Não há música pausada para retomar.", delete_after=2)
+
+    @nextcord.ui.button(emoji="⏭️", style=nextcord.ButtonStyle.red)
+    async def skip_button(self, button: Button, interaction: nextcord.Interaction):
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
+            return
+
+        if self.ctx.voice_client and self.ctx.voice_client.is_playing():
+            self.ctx.voice_client.stop()
+            await interaction.response.send_message("⏭️ Música pulada.", delete_after=2)
+        else:
+            await interaction.response.send_message("❌ Não há música tocando para pular.", delete_after=2)
+
 
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -51,7 +96,7 @@ class Music(commands.Cog):
                 if not is_url:
                     info = info['entries'][0]
                 audio_url = next((format['url'] for format in info['formats'] if format.get('acodec') != 'none'), None)
-                
+
                 if audio_url:
                     return audio_url, info
         except Exception as e:
@@ -59,8 +104,7 @@ class Music(commands.Cog):
             return None, None
 
     async def play_song(self, ctx, query):
-        """Plays a song or sends an error if the bot is not connected to a voice channel."""
-        # Ensure the bot is connected to a voice channel
+        """Plays a song and displays the Now Playing embed with control buttons."""
         if not ctx.voice_client:
             await ctx.send("❌ O bot não está conectado a um canal de voz.", delete_after=5)
             await self.clear_state()
@@ -86,10 +130,12 @@ class Music(commands.Cog):
             if 'thumbnail' in info:
                 embed.set_thumbnail(url=info['thumbnail'])
 
+            view = NowPlayingView(self, ctx)  # Attach the button controls to the embed
+
             if self.now_playing_message:
-                await self.now_playing_message.edit(embed=embed)
+                await self.now_playing_message.edit(embed=embed, view=view)
             else:
-                self.now_playing_message = await ctx.send(embed=embed)
+                self.now_playing_message = await ctx.send(embed=embed, view=view)
         else:
             await ctx.send("❌ Não foi possível encontrar a música.", delete_after=5)
             if ctx.voice_client:
@@ -97,19 +143,10 @@ class Music(commands.Cog):
             await self.clear_state()
 
     async def handle_song_end(self, ctx):
-        """Handles the end of the current song and plays the next one if available."""
         if len(self.queue) > 0:
             next_song = self.queue.pop(0)
-
-            # Check if the bot is still connected to the voice channel
-            if ctx.voice_client:
-                await self.play_song(ctx, next_song)
-            else:
-                # Clear state if the bot is no longer in the voice channel
-                await self.clear_state()
-                await ctx.send("⚠️ O bot foi desconectado e a fila foi limpa.", delete_after=5)
+            await self.play_song(ctx, next_song)
         else:
-            # If the queue is empty, disconnect
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
             self.is_playing = False
@@ -127,7 +164,10 @@ class Music(commands.Cog):
         if not ctx.voice_client:
             await voice_channel.connect()
 
-        if self.is_playing:
+        if not self.is_playing:
+            self.is_playing = True
+            await self.play_song(ctx, query)
+        else:
             self.queue.append(query)
             audio_url, info = await self.fetch_audio_url(query)
             if audio_url and info:
@@ -139,9 +179,6 @@ class Music(commands.Cog):
                 await ctx.send(embed=embed)
             else:
                 await ctx.send("❌ Não foi possível adicionar a música.", delete_after=5)
-        else:
-            self.is_playing = True
-            await self.play_song(ctx, query)
 
     @commands.command()
     async def queue(self, ctx):
@@ -155,14 +192,6 @@ class Music(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
-    async def skip(self, ctx):
-        if ctx.voice_client and ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-            await ctx.send("⏭️ Música pulada.", delete_after=5)
-        else:
-            await ctx.send("❌ Não há música tocando no momento.", delete_after=5)
-
-    @commands.command()
     async def stop(self, ctx):
         if ctx.voice_client:
             ctx.voice_client.stop()
@@ -171,23 +200,6 @@ class Music(commands.Cog):
         else:
             await ctx.send("❌ O bot não está tocando música.", delete_after=5)
 
-    @commands.command()
-    async def pause(self, ctx):
-        """Pause the current music."""
-        if ctx.voice_client and ctx.voice_client.is_playing():
-            ctx.voice_client.pause()
-            await ctx.send("⏸️ A música foi pausada.", delete_after=5)
-        else:
-            await ctx.send("❌ Não há música tocando no momento para pausar.", delete_after=5)
-
-    @commands.command()
-    async def resume(self, ctx):
-        """Resume the paused music."""
-        if ctx.voice_client and ctx.voice_client.is_paused():
-            ctx.voice_client.resume()
-            await ctx.send("▶️ A música foi retomada.", delete_after=5)
-        else:
-            await ctx.send("❌ Não há música pausada no momento.", delete_after=5)
 
 def setup(bot):
     bot.add_cog(Music(bot))
