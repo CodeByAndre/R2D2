@@ -3,3 +3,8 @@ pymongo
 nextcord 
 python-dotenv
 requests
+yt-dlp[default] --pre
+deep-translator
+easy-pil
+pynacl
+openai

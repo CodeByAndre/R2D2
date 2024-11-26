@@ -38,7 +38,6 @@ class Help(commands.Cog):
             name=":game_die: | Games",
             value=(
                 "`galo` - Start the game\n"
-                "  ↳ `colocar` - Make a move (use after galo)\n"
                 "`futebolada` - Create teams\n"
                 "  ↳ `player` - Add a player\n"
                 "  ↳ `rplayer` - Remove a player\n"
@@ -49,7 +48,11 @@ class Help(commands.Cog):
 
         embed.add_field(
             name=":speech_balloon: | General",
-            value="`ping` - Check bot latency",
+            value=(
+                "`ping` - Check bot latency"
+                "`txt` - generate text\n"
+                "`img` - generate images\n"
+            ),
             inline=False
         )
 

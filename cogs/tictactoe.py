@@ -13,10 +13,10 @@ class TicTacToe(commands.Cog):
         self.player2 = None
         self.turn = None
         self.gameOver = True
-        self.board = ["⬜"] * 9  # Initialize the board with blank squares
+        self.board = ["⬜"] * 9
         self.count = 0
-        self.row_messages = []  # Store messages for each row
-        self.turn_message = None  # Store the turn embed message
+        self.row_messages = []
+        self.turn_message = None
         self.winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],
             [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
@@ -32,7 +32,6 @@ class TicTacToe(commands.Cog):
             self.turn = random.choice([self.player1, self.player2])
             self.gameOver = False
 
-            # Send the initial turn message
             embed = nextcord.Embed(
                 title="Jogo da Velha - Tic Tac Toe",
                 description=f"É a tua vez {self.turn.mention}!",
@@ -40,7 +39,6 @@ class TicTacToe(commands.Cog):
             )
             self.turn_message = await ctx.send(embed=embed)
 
-            # Send each row as a separate message
             self.row_messages = []
             for row_index in range(3):
                 view = self.create_row_view(ctx, row_index)
@@ -55,10 +53,10 @@ class TicTacToe(commands.Cog):
         start = row_index * 3
         for i in range(start, start + 3):
             button = Button(
-                label=self.board[i],  # Use the current state of the board
+                label=self.board[i], 
                 style=nextcord.ButtonStyle.success if self.board[i] != "⬜" else nextcord.ButtonStyle.secondary,
                 custom_id=str(i),
-                disabled=self.board[i] != "⬜"  # Disable the button if it's already marked
+                disabled=self.board[i] != "⬜"
             )
             button.callback = self.make_move(ctx, i)
             view.add_item(button)
@@ -81,7 +79,6 @@ class TicTacToe(commands.Cog):
             mark = "❌" if self.turn == self.player1 else "⭕"
             self.board[position] = mark
 
-            # Update the row's view
             row_index = position // 3
             updated_view = self.create_row_view(ctx, row_index)
 
@@ -108,7 +105,6 @@ class TicTacToe(commands.Cog):
                 await self.turn_message.edit(embed=embed)
                 return
 
-            # Switch turn
             self.turn = self.player1 if self.turn == self.player2 else self.player2
             embed = nextcord.Embed(
                 title="Jogo da Velha - Tic Tac Toe",
