@@ -2,3 +2,4 @@ cryptography
 pymongo
 nextcord 
 python-dotenv
+requests
