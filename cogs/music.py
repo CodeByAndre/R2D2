@@ -59,6 +59,13 @@ class Music(commands.Cog):
             return None, None
 
     async def play_song(self, ctx, query):
+        """Plays a song or sends an error if the bot is not connected to a voice channel."""
+        # Ensure the bot is connected to a voice channel
+        if not ctx.voice_client:
+            await ctx.send("❌ O bot não está conectado a um canal de voz.", delete_after=5)
+            await self.clear_state()
+            return
+
         search_msg = await ctx.send("🔍 A procura da música, aguarde...")
         audio_url, info = await self.fetch_audio_url(query)
 
@@ -70,8 +77,8 @@ class Music(commands.Cog):
             await search_msg.delete()
 
             embed = Embed(
-                title="🎵 Now Playing", 
-                description=info['title'], 
+                title="🎵 Now Playing",
+                description=info['title'],
                 color=nextcord.Color.blue()
             )
             embed.add_field(name="Duração", value=info.get('duration', 'N/A'), inline=True)
@@ -85,20 +92,32 @@ class Music(commands.Cog):
                 self.now_playing_message = await ctx.send(embed=embed)
         else:
             await ctx.send("❌ Não foi possível encontrar a música.", delete_after=5)
-            await ctx.voice_client.disconnect()
+            if ctx.voice_client:
+                await ctx.voice_client.disconnect()
+            await self.clear_state()
 
     async def handle_song_end(self, ctx):
+        """Handles the end of the current song and plays the next one if available."""
         if len(self.queue) > 0:
             next_song = self.queue.pop(0)
-            await self.play_song(ctx, next_song)
+
+            # Check if the bot is still connected to the voice channel
+            if ctx.voice_client:
+                await self.play_song(ctx, next_song)
+            else:
+                # Clear state if the bot is no longer in the voice channel
+                await self.clear_state()
+                await ctx.send("⚠️ O bot foi desconectado e a fila foi limpa.", delete_after=5)
         else:
-            await ctx.voice_client.disconnect()
+            # If the queue is empty, disconnect
+            if ctx.voice_client:
+                await ctx.voice_client.disconnect()
             self.is_playing = False
-            await ctx.send("✅ A fila de músicas acabou. Desconectando...", delete_after=3)
+            await ctx.send("✅ A fila de músicas acabou. Desconectando...", delete_after=5)
 
     @commands.command()
     async def play(self, ctx, *, query: str):
-        """Play a song using a URL or search query."""
+        """Play a song using a URL or search query. If a song is already playing, add it to the queue."""
         if not ctx.author.voice:
             await ctx.send("❌ Precisas de estar em um canal de voz!", delete_after=5)
             return
@@ -108,31 +127,21 @@ class Music(commands.Cog):
         if not ctx.voice_client:
             await voice_channel.connect()
 
-        if not self.is_playing:
+        if self.is_playing:
+            self.queue.append(query)
+            audio_url, info = await self.fetch_audio_url(query)
+            if audio_url and info:
+                embed = Embed(
+                    title="🎵 Música adicionada à fila",
+                    description=f"[{info['title']}]({info['webpage_url']})",
+                    color=nextcord.Color.purple()
+                )
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("❌ Não foi possível adicionar a música.", delete_after=5)
+        else:
             self.is_playing = True
             await self.play_song(ctx, query)
-        else:
-            self.queue.append(query)
-            embed = Embed(
-                title="🎵 Música adicionada à fila", 
-                description=f"[Clique aqui para ouvir]({query})", 
-                color=nextcord.Color.purple()
-            )
-            await ctx.send(embed=embed)
-
-    @commands.command()
-    async def add(self, ctx, *, query: str):
-        audio_url, info = await self.fetch_audio_url(query)
-        if audio_url and info:
-            self.queue.append(query)
-            embed = Embed(
-                title="🎵 Música adicionada à fila", 
-                description=f"[{info['title']}]({info['webpage_url']})", 
-                color=nextcord.Color.purple()
-            )
-            await ctx.send(embed=embed, delete_after=7)
-        else:
-            await ctx.send("❌ Não foi possível adicionar a música.", delete_after=5)
 
     @commands.command()
     async def queue(self, ctx):
