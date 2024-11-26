@@ -27,7 +27,6 @@ class Help(commands.Cog):
             name=":game_die: | Games",
             value=(
                 "`galo` - Start the game\n"
-                "  ↳ `colocar` - Make a move (use after `galo`)\n"
                 "`futebolada` - Create teams\n"
                 "  ↳ `player` - Add a player\n"
                 "  ↳ `rplayer` - Remove a player\n"
@@ -57,8 +56,15 @@ class Help(commands.Cog):
                 admin_embed.add_field(
                     name=":tools: | Admin Commands",
                     value=(
-                        "`ban`, `clean`, `kick`, `mutechannel`, `reaction`, "
-                        "`reboot`, `unban`, `prefix`, `welcome`"
+                        "`ban` - Ban a user\n"
+                        "`clean` - Delete messages\n"
+                        "`kick` - Kick a user\n"
+                        "`mutechannel` - Mute the current channel\n"
+                        "`reaction` - Add a reaction role\n"
+                        "`reboot` - Reboot the bot\n"
+                        "`unban` - Unban a user\n"
+                        "`prefix` - Change the bot's prefix\n"
+                        "`welcome` - Set a welcome message"
                     ),
                     inline=False
                 )
