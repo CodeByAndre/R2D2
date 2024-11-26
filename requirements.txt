@@ -1,0 +1,4 @@
+cryptography
+pymongo
+nextcord 
+python-dotenv
