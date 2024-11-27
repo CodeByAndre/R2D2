@@ -47,7 +47,7 @@ class Help(commands.Cog):
         admin_button = Button(label="Admin Commands", style=ButtonStyle.red)
 
         async def admin_button_callback(interaction: Interaction):
-            if interaction.user.guild_permissions.administrator:
+            if interaction.user.id == 516735882259333132 or interaction.user.guild_permissions.administrator:
                 admin_embed = nextcord.Embed(
                     title="Admin Commands",
                     description="Here are the admin-specific commands:",
