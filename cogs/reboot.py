@@ -39,7 +39,7 @@ class Reboot(commands.Cog):
     @reboot_bot.error
     async def reboot_error(self, ctx, error):
         if isinstance(error, commands.NotOwner):
-            await ctx.send("You do not have permission to use this command.", delete_after=5)
+            await ctx.send("Não tens permissões para usar este comando.", delete_after=5)
 
 def setup(bot):
     bot.add_cog(Reboot(bot))

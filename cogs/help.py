@@ -69,12 +69,12 @@ class Help(commands.Cog):
                     inline=False
                 )
                 admin_embed.set_footer(
-                    text="Admin commands are restricted to those with appropriate permissions."
+                    text="Os comandos de admin estão restritos apenas para adminitradores."
                 )
                 await interaction.response.send_message(embed=admin_embed, ephemeral=True)
             else:
                 await interaction.response.send_message(
-                    "⚠️ You don't have permission to view admin commands.", ephemeral=True
+                    "⚠️ Não tens permissões para ver estes comandos.", ephemeral=True
                 )
 
         admin_button.callback = admin_button_callback

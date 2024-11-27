@@ -24,6 +24,10 @@ class TicTacToe(commands.Cog):
 
     @commands.command()
     async def galo(self, ctx, p2: nextcord.Member):
+        if p2 == self.bot.user:
+            await ctx.send("❌ Não podes jogar contra mim!")
+            return
+
         if self.gameOver:
             self.reset_game()
 
