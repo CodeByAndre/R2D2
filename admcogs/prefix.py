@@ -10,8 +10,12 @@ class Prefix(commands.Cog):
         self.collection = self.db["prefixes"]
 
     @commands.command(name="prefix")
-    @commands.has_permissions(administrator=True)
     async def change_prefix(self, ctx, new_prefix: str):
+        """Allows server administrators or the bot owner to change the bot's prefix."""
+        if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Apenas os administradores podem usar este comando.", delete_after=3)
+            return
+
         if len(new_prefix) > 5:
             await ctx.send("O prefixo é muito longo! Tente algo com até 5 caracteres.", delete_after=3)
             return
@@ -22,15 +26,15 @@ class Prefix(commands.Cog):
             upsert=True
         )
         await ctx.send(f"O prefixo foi alterado para `{new_prefix}`!", delete_after=3)
-    
+
     @change_prefix.error
     async def change_prefix_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("Apenas administradores podem alterar o prefixo.", delete_after=3)
+            await ctx.send("❌ Apenas administradores podem alterar o prefixo.", delete_after=3)
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Por favor, forneça um novo prefixo. Exemplo: `/prefix .`", delete_after=3)
+            await ctx.send("❌ Por favor, forneça um novo prefixo. Exemplo: `/prefix .`", delete_after=3)
         else:
-            await ctx.send("Ocorreu um erro ao tentar alterar o prefixo.", delete_after=3)
+            await ctx.send("❌ Ocorreu um erro ao tentar alterar o prefixo.", delete_after=3)
 
 def setup(bot):
     bot.add_cog(Prefix(bot))

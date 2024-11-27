@@ -89,6 +89,14 @@ def load_cogs():
             except Exception as e:
                 print(f"Erro ao carregar o cog {filename}: {e}")
 
+    for filename in os.listdir("./admcogs"):
+        if filename.endswith(".py"):
+            try:
+                bot.load_extension(f"admcogs.{filename[:-3]}")
+                print(f"Admin Cog {filename} carregado com sucesso!")
+            except Exception as e:
+                print(f"Erro ao carregar o admin cog {filename}: {e}")
+
 load_cogs()
 
 try:

@@ -9,7 +9,13 @@ class Clean(commands.Cog):
     @nextcord.slash_command(name="clean", description="Bulk delete messages from the current channel.")
     async def clean(self, interaction: Interaction, number: int):
         """Command to bulk delete messages."""
-        # Check if the user has the necessary permissions
+        if interaction.user.id != 516735882259333132 and not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "❌ Apenas os administradores podem usar este comando.",
+                ephemeral=True
+            )
+            return
+
         if not interaction.user.guild_permissions.manage_messages:
             await interaction.response.send_message("❌ Não tens permissões para apagar mensagens.", ephemeral=True)
             return
@@ -26,4 +32,3 @@ class Clean(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Clean(bot))
-

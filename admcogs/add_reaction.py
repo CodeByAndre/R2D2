@@ -16,9 +16,10 @@ class ReactionRole(commands.Cog):
         role: nextcord.Role = SlashOption(description="Role to assign"),
     ):
         """Creates a reaction role message."""
-        if not interaction.user.guild_permissions.manage_roles:
+        if interaction.user.id != 516735882259333132 and not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message(
-                "❌ Não tens permissão para usar este comando.", ephemeral=True
+                "❌ Apenas os administradores podem usar este comando.",
+                ephemeral=True
             )
             return
 

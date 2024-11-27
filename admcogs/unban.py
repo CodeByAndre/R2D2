@@ -12,6 +12,13 @@ class Unban(commands.Cog):
         user_id: str = nextcord.SlashOption(description="ID do utilizador para desbanir", required=True),
     ):
         """Unbans a user from the server using their ID."""
+        if interaction.user.id != 516735882259333132 and not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "❌ Apenas os administradores podem usar este comando.",
+                ephemeral=True
+            )
+            return
+
         try:
             user = await self.bot.fetch_user(int(user_id))
             await interaction.guild.unban(user)

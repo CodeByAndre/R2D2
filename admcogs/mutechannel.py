@@ -9,6 +9,10 @@ class MuteChannel(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def lock_channel(self, ctx):
         """Lock the current channel by preventing users from sending messages."""
+        if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Apenas os administradores podem usar este comando.")
+            return
+
         channel = ctx.channel
 
         try:
@@ -21,6 +25,10 @@ class MuteChannel(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def unlock_channel(self, ctx):
         """Unlock the current channel by allowing users to send messages."""
+        if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Apenas os administradores podem usar este comando.")
+            return
+
         channel = ctx.channel
 
         try:

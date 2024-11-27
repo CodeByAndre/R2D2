@@ -6,9 +6,16 @@ class SlowMode(commands.Cog):
         self.bot = bot
 
     @commands.command(name="slowmode")
-    @commands.has_permissions(manage_channels=True)
     async def set_slowmode(self, ctx, seconds: int):
         """Sets the slowmode in the current channel."""
+        if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Apenas os administradores podem usar este comando.")
+            return
+
+        if seconds < 0:
+            await ctx.send("❌ O número de segundos para o modo lento não pode ser negativo.")
+            return
+
         try:
             await ctx.channel.edit(slowmode_delay=seconds)
             
