@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 from nextcord.ext import commands
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -30,10 +29,9 @@ class Reboot(commands.Cog):
         python_executable = sys.executable
         script_path = os.path.abspath("main.py")
 
-        subprocess.Popen([python_executable, script_path])
-
         await self.bot.close()
-        os._exit(0)
+
+        os.execv(python_executable, [python_executable, script_path])
 
     @reboot_bot.error
     async def reboot_error(self, ctx, error):
