@@ -35,7 +35,7 @@ class Gerar(commands.Cog):
     async def generate_image(self, ctx, *, prompt: str):
         """Generate an image using OpenAI's DALL-E."""
         if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
-            await ctx.send("❌ Apenas os dono do bot podem usar este comando.")
+            await ctx.send("❌ Apenas os administradores podem usar este comando.")
             return
         try:
             warning_msg = await ctx.send("🔄 Gerando a imagem. Isso pode levar alguns segundos!")
