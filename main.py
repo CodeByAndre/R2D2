@@ -111,10 +111,18 @@ async def on_ready():
             channel = bot.get_channel(channel_id)
             if channel:
                 try:
+                    if message_id:
+                        try:
+                            msg = await channel.fetch_message(message_id)
+                            await msg.delete()
+                            logger.info(f"Deleted the reboot message with ID {message_id} in channel {channel_id}.")
+                        except Exception as e:
+                            logger.warning(f"Could not delete reboot message with ID {message_id}: {e}")
+                    
                     await channel.send("🔄 Reboot completed successfully!", delete_after=5)
-                    logger.info(f"Reboot message sent to channel ID {channel_id}")
+                    logger.info(f"Reboot message sent to channel ID {channel_id}.")
                 except Exception as e:
-                    logger.error(f"Failed to send reboot message: {e}")
+                    logger.error(f"Failed to send reboot message or delete old message: {e}")
         else:
             logger.warning("Reboot status found but channel_id is missing.")
 
@@ -123,6 +131,7 @@ async def on_ready():
 
     await bot.sync_application_commands()
     change_status.start()
+
 
 @bot.event
 async def on_command(ctx):
