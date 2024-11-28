@@ -17,7 +17,6 @@ class Reboot(commands.Cog):
     @commands.command(name="reboot")
     @commands.is_owner()
     async def reboot_bot(self, ctx):
-        """Command to reboot the bot."""
         confirmation_msg = await ctx.send("Rebooting...")
 
         self.collection.update_one(

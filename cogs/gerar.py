@@ -20,7 +20,6 @@ class Gerar(commands.Cog):
 
     @commands.command(name="txt")
     async def generate_text(self, ctx, *, prompt: str):
-        """Generate text using OpenAI's GPT model."""
         try:
             response = await self.client_openai.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -33,7 +32,6 @@ class Gerar(commands.Cog):
 
     @commands.command(name="img")
     async def generate_image(self, ctx, *, prompt: str):
-        """Generate an image using OpenAI's DALL-E."""
         if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
             await ctx.send("❌ Apenas os administradores podem usar este comando.")
             return

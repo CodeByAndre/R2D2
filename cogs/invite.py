@@ -7,7 +7,6 @@ class Invite(commands.Cog):
 
     @commands.command(name="invite")
     async def generate_invite(self, ctx):
-        """Generate an invite link for the bot."""
         invite_url = nextcord.utils.oauth_url(self.bot.user.id, permissions=nextcord.Permissions(permissions=8))
 
         embed = nextcord.Embed(

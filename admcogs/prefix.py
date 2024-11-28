@@ -11,7 +11,6 @@ class Prefix(commands.Cog):
 
     @commands.command(name="prefix")
     async def change_prefix(self, ctx, new_prefix: str):
-        """Allows server administrators or the bot owner to change the bot's prefix."""
         if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
             await ctx.send("❌ Apenas os administradores podem usar este comando.", delete_after=3)
             return

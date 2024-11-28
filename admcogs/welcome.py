@@ -57,7 +57,6 @@ class Welcome(commands.Cog):
     @commands.command(name='setwelcome')
     @commands.has_permissions(administrator=True)
     async def set_welcome_channel(self, ctx, channel: nextcord.TextChannel):
-        """Set the welcome channel for the server."""
         try:
             self.collection.update_one(
                 {"server_id": ctx.guild.id},

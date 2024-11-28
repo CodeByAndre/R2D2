@@ -7,7 +7,6 @@ class SlowMode(commands.Cog):
 
     @commands.command(name="slowmode")
     async def set_slowmode(self, ctx, seconds: int):
-        """Sets the slowmode in the current channel."""
         if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
             await ctx.send("❌ Apenas os administradores podem usar este comando.")
             return

@@ -104,7 +104,6 @@ class Music(commands.Cog):
             return None, None
 
     async def play_song(self, ctx, query):
-        """Plays a song and displays the Now Playing embed with control buttons."""
         if not ctx.voice_client:
             await ctx.send("❌ O bot não está conectado a um canal de voz.", delete_after=5)
             await self.clear_state()
@@ -154,7 +153,6 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self, ctx, *, query: str):
-        """Play a song using a URL or search query. If a song is already playing, add it to the queue."""
         if not ctx.author.voice:
             await ctx.send("❌ Precisas de estar em um canal de voz!", delete_after=5)
             return

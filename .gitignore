@@ -2,3 +2,4 @@ venv/
 cogs/__pycache__/
 admcogs/__pycache__/
 .env
+bot.log

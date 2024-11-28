@@ -13,7 +13,6 @@ class Futebolada(commands.Cog):
 
     @commands.command()
     async def player(self, ctx, *args):
-        """Adds players with skills to the database."""
         if len(args) % 2 != 0:
             await ctx.send("Por favor, forneça pares de nome e habilidade (exemplo: `Lukas bom Pedro medio`).")
             return
@@ -39,7 +38,6 @@ class Futebolada(commands.Cog):
 
     @commands.command()
     async def rplayer(self, ctx, name: str):
-        """Removes a player from the database."""
         guild_id = str(ctx.guild.id)
         result = self.collection.delete_one({"guild_id": guild_id, "name": name})
         if result.deleted_count > 0:
@@ -49,7 +47,6 @@ class Futebolada(commands.Cog):
 
     @commands.command()
     async def players(self, ctx):
-        """Displays the list of players and their skills."""
         guild_id = str(ctx.guild.id)
         players = list(self.collection.find({"guild_id": guild_id}))
 
@@ -80,7 +77,6 @@ class Futebolada(commands.Cog):
 
     @commands.command()
     async def clearp(self, ctx):
-        """Clears all players for the current server."""
         guild_id = str(ctx.guild.id)
         result = self.collection.delete_many({"guild_id": guild_id})
         if result.deleted_count > 0:
@@ -90,7 +86,6 @@ class Futebolada(commands.Cog):
 
     @commands.command()
     async def futebolada(self, ctx):
-        """Creates two balanced teams from the registered players."""
         guild_id = str(ctx.guild.id)
         players = list(self.collection.find({"guild_id": guild_id}))
 
@@ -119,7 +114,6 @@ class Futebolada(commands.Cog):
         await ctx.send(embed=embed)
 
     def balance_teams(self, skill_groups):
-        """Balances teams based on player skills."""
         random.shuffle(skill_groups["bom"])
         random.shuffle(skill_groups["medio"])
         random.shuffle(skill_groups["mau"])

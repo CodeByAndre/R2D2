@@ -11,7 +11,6 @@ class FilmesESeries(commands.Cog):
         self.db = self.client["R2D2BotDB"]
         self.collection = self.db["keys"]
 
-        # Fetch API key from the database
         api_key_entry = self.collection.find_one({"name": "TMDB_API_KEY"})
         if not api_key_entry or "value" not in api_key_entry:
             raise ValueError("API key for TMDb not found in the database.")
@@ -19,7 +18,6 @@ class FilmesESeries(commands.Cog):
 
     @commands.command(name="filme")
     async def filme(self, ctx, *, nome):
-        """Fetches movie details from TMDb."""
         search_url = f"https://api.themoviedb.org/3/search/movie?api_key={self.api_key}&query={nome}"
         response = requests.get(search_url)
 
@@ -73,7 +71,6 @@ class FilmesESeries(commands.Cog):
 
     @commands.command()
     async def serie(self, ctx, *, nome):
-        """Fetches TV series information from TMDb."""
         search_url = f"https://api.themoviedb.org/3/search/tv?api_key={self.api_key}&query={nome}"
         response = requests.get(search_url)
 
@@ -102,7 +99,6 @@ class FilmesESeries(commands.Cog):
             embed.add_field(name="Gênero", value=", ".join([genre["name"] for genre in details["genres"]]), inline=True)
             embed.add_field(name="Classificação TMDb", value=details["vote_average"], inline=True)
 
-            # Check if episode_run_time has data
             if details["episode_run_time"]:
                 embed.add_field(name="Duração", value=f"{details['episode_run_time'][0]} minutos por episódio", inline=True)
             else:

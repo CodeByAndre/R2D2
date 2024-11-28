@@ -52,7 +52,6 @@ class TicTacToe(commands.Cog):
             await ctx.send("Um jogo já está em andamento. Termine o jogo atual para começar outro.")
 
     def create_row_view(self, ctx, row_index):
-        """Create a view for a single row of the board."""
         view = View(timeout=None)
         start = row_index * 3
         for i in range(start, start + 3):

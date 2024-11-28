@@ -2,6 +2,9 @@ import nextcord
 from nextcord.ext import commands
 from nextcord import Interaction, SlashOption, ButtonStyle
 from nextcord.ui import View, Button
+import logging
+
+logger = logging.getLogger("DiscordBot")
 
 class Help(commands.Cog):
     def __init__(self, bot):
@@ -10,7 +13,6 @@ class Help(commands.Cog):
 
     @nextcord.slash_command(name="help", description="Displays the help menu.")
     async def help_command(self, interaction: Interaction):
-        """Displays the help menu with a button for admin commands."""
         embed = nextcord.Embed(
             title="Help Menu",
             description="Explore the available commands below:",
@@ -71,8 +73,10 @@ class Help(commands.Cog):
                 admin_embed.set_footer(
                     text="Os comandos de admin estão restritos apenas para adminitradores."
                 )
+                logger.info(f"Slash command 'help' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name} para ver os comandos de admin.")
                 await interaction.response.send_message(embed=admin_embed, ephemeral=True)
             else:
+                logger.warning(f"Slash command 'help' negado para {interaction.user} no server {interaction.guild.name}#{interaction.channel.name} devido a permissões insuficientes.")
                 await interaction.response.send_message(
                     "⚠️ Não tens permissões para ver estes comandos.", ephemeral=True
                 )
@@ -82,6 +86,7 @@ class Help(commands.Cog):
         view = View()
         view.add_item(admin_button)
 
+        logger.info(f"Slash command 'help' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name}.")
         await interaction.response.send_message(embed=embed, view=view)
 
 def setup(bot):
