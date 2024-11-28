@@ -26,12 +26,14 @@ class Reboot(commands.Cog):
 
         await ctx.message.delete()
 
-        python_executable = sys.executable
-        script_path = os.path.abspath("main.py")
+        screen_command = f'screen -dmS discord-bot bash -c "source venv/bin/activate && python main.py"'
+        
+        # Launch the new screen session with the bot
+        os.system(screen_command)
 
+        # Close the current bot session
         await self.bot.close()
-
-        os.execv(python_executable, [python_executable, script_path])
+        os._exit(0)
 
     @reboot_bot.error
     async def reboot_error(self, ctx, error):
