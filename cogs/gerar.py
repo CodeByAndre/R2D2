@@ -2,7 +2,7 @@ import os
 from nextcord.ext import commands
 from nextcord import Embed
 from pymongo import MongoClient
-from openai import AsyncOpenAI
+import openai
 
 
 class Gerar(commands.Cog):
@@ -16,13 +16,13 @@ class Gerar(commands.Cog):
         if not api_key_doc:
             raise ValueError("Chave da API OpenAI não encontrada no banco de dados!")
         self.openai_key = api_key_doc["value"]
-        self.client_openai = AsyncOpenAI(api_key=self.openai_key)
+        openai.api_key = self.openai_key
 
     @commands.command(name="txt")
     async def generate_text(self, ctx, *, prompt: str):
         """Generate text using OpenAI's GPT model."""
         try:
-            response = await self.client_openai.chat.completions.create(
+            response = await openai.ChatCompletion.acreate(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -40,11 +40,12 @@ class Gerar(commands.Cog):
         try:
             warning_msg = await ctx.send("🔄 Gerando a imagem. Isso pode levar alguns segundos!")
 
-            response = await self.client_openai.images.generate(
+            response = await openai.Image.acreate(
                 prompt=prompt,
-                size="1024x1024"
+                size="1024x1024",
+                n=1  # Number of images to generate
             )
-            image_url = response.data[0].url
+            image_url = response['data'][0]['url']
 
             embed = Embed(
                 title="Aqui está sua imagem!",
@@ -59,6 +60,7 @@ class Gerar(commands.Cog):
 
         except Exception as e:
             await ctx.send(f"❌ Erro ao gerar a imagem: {e}")
+
 
 def setup(bot):
     bot.add_cog(Gerar(bot))
