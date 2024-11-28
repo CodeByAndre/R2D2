@@ -28,10 +28,8 @@ class Reboot(commands.Cog):
 
         screen_command = f'screen -dmS discord-bot bash -c "source venv/bin/activate && python main.py"'
         
-        # Launch the new screen session with the bot
         os.system(screen_command)
 
-        # Close the current bot session
         await self.bot.close()
         os._exit(0)
 

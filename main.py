@@ -59,13 +59,22 @@ class DiscordLogHandler(logging.Handler):
         super().__init__()
         self.bot = bot
         self.channel_id = channel_id
+        self.log_queue = []
 
     def emit(self, record):
         log_entry = self.format(record)
         channel = self.bot.get_channel(self.channel_id)
+
         if not channel:
-            print(f"Failed to send log to channel {self.channel_id}. Channel not found.")
+            self.log_queue.append(log_entry)
+            print(f"Queued log: {log_entry}")
             return
+        
+        if self.log_queue:
+            for queued_log in self.log_queue:
+                self.bot.loop.create_task(channel.send(queued_log))
+            self.log_queue.clear()
+
         try:
             self.bot.loop.create_task(channel.send(log_entry))
         except Exception as e:
@@ -90,6 +99,28 @@ async def change_status():
 async def on_ready():
     print(f"Bot conectado como {bot.user}!")
     logger.info(f"Bot conectado como {bot.user}!")
+
+    collection_reboot = db["reboot_status"]
+    reboot_status = collection_reboot.find_one({"_id": "reboot_status"})
+
+    if reboot_status:
+        channel_id = reboot_status.get("channel_id")
+        message_id = reboot_status.get("message_id")
+
+        if channel_id:
+            channel = bot.get_channel(channel_id)
+            if channel:
+                try:
+                    await channel.send("🔄 Reboot completed successfully!", delete_after=5)
+                    logger.info(f"Reboot message sent to channel ID {channel_id}")
+                except Exception as e:
+                    logger.error(f"Failed to send reboot message: {e}")
+        else:
+            logger.warning("Reboot status found but channel_id is missing.")
+
+        collection_reboot.delete_one({"_id": "reboot_status"})
+        logger.info("Reboot status cleared from the database.")
+
     await bot.sync_application_commands()
     change_status.start()
 
