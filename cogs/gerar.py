@@ -34,6 +34,9 @@ class Gerar(commands.Cog):
     @commands.command(name="img")
     async def generate_image(self, ctx, *, prompt: str):
         """Generate an image using OpenAI's DALL-E."""
+        if ctx.author.id != 516735882259333132 and not ctx.author.guild_permissions.administrator:
+            await ctx.send("❌ Apenas os dono do bot podem usar este comando.")
+            return
         try:
             warning_msg = await ctx.send("🔄 Gerando a imagem. Isso pode levar alguns segundos!")
 
@@ -56,7 +59,6 @@ class Gerar(commands.Cog):
 
         except Exception as e:
             await ctx.send(f"❌ Erro ao gerar a imagem: {e}")
-
 
 def setup(bot):
     bot.add_cog(Gerar(bot))
