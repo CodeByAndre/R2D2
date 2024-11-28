@@ -2,6 +2,8 @@ import nextcord
 from nextcord.ext import commands
 from nextcord import Interaction, SlashOption
 import logging
+from pymongo import MongoClient
+import os
 
 logger = logging.getLogger("DiscordBot")
 
@@ -9,6 +11,28 @@ class ReactionRole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.reaction_roles = {}
+
+        self.client = MongoClient(os.getenv("MONGO_URI"))
+        self.db = self.client["R2D2BotDB"]
+        self.collection = self.db["reaction_roles"]
+
+        self.load_reaction_roles()
+
+    def load_reaction_roles(self):
+        for document in self.collection.find():
+            message_id = document["message_id"]
+            self.reaction_roles[message_id] = (document["emoji"], document["role_id"])
+        logger.info("Reação-cargos carregados da base de dados.")
+
+    def save_reaction_role(self, message_id, emoji, role_id):
+        self.collection.update_one(
+            {"message_id": message_id},
+            {"$set": {"emoji": emoji, "role_id": role_id}},
+            upsert=True
+        )
+
+    def remove_reaction_role(self, message_id):
+        self.collection.delete_one({"message_id": message_id})
 
     @nextcord.slash_command(name="react", description="Creates a reaction role message.")
     async def react(
@@ -39,7 +63,10 @@ class ReactionRole(commands.Cog):
         try:
             message = await interaction.channel.send(embed=embed)
             await message.add_reaction(emoji)
-            self.reaction_roles[message.id] = (str(emoji), role)
+
+            self.reaction_roles[message.id] = (str(emoji), role.id)
+            self.save_reaction_role(message.id, str(emoji), role.id)
+
             await interaction.response.send_message(
                 "✅ Mensagem de reação criada com sucesso!", ephemeral=True
             )
@@ -57,12 +84,13 @@ class ReactionRole(commands.Cog):
             return
 
         if payload.message_id in self.reaction_roles:
-            emoji, role = self.reaction_roles[payload.message_id]
+            emoji, role_id = self.reaction_roles[payload.message_id]
             if str(payload.emoji) == emoji:
                 guild = self.bot.get_guild(payload.guild_id)
                 if guild:
                     member = guild.get_member(payload.user_id)
-                    if member:
+                    role = guild.get_role(role_id)
+                    if member and role:
                         try:
                             await member.add_roles(role)
                             channel = self.bot.get_channel(payload.channel_id)
@@ -83,10 +111,11 @@ class ReactionRole(commands.Cog):
             return
 
         if payload.message_id in self.reaction_roles:
-            emoji, role = self.reaction_roles[payload.message_id]
+            emoji, role_id = self.reaction_roles[payload.message_id]
             if str(payload.emoji) == emoji:
                 member = guild.get_member(payload.user_id)
-                if member:
+                role = guild.get_role(role_id)
+                if member and role:
                     try:
                         await member.remove_roles(role)
                         channel = self.bot.get_channel(payload.channel_id)
