@@ -16,29 +16,38 @@ class KyerControl(commands.Cog):
         if not after.self_mute or not after.self_deaf:
             try:
                 await member.edit(mute=True, deafen=True)
-                print(f"Muted e deafened {member.display_name} em {member.guild.name}.")
+                print(f"Muted and deafened {member.display_name} in {member.guild.name}.")
             except nextcord.Forbidden:
-                print("O bot nao tem permissoes para dar mute e deafen.")
+                print("The bot does not have permission to mute and deafen.")
             except nextcord.HTTPException as e:
                 print(f"Failed to mute or deafen {member.display_name}: {e}")
 
     @commands.command(name="ativarkyer")
     async def ativarkyer(self, ctx):
         if ctx.author.id != self.owner_id:
-            await ctx.send("Nao tens permissoes para usar este comando.")
+            await ctx.send("❌ Nao tens permissoes para usar este comando.")
             return
 
         self.active = True
-        await ctx.send("Kyer control ativado!")
+        await ctx.send("✅ Kyer control ativo!")
 
     @commands.command(name="desativarkyer")
     async def desativarkyer(self, ctx):
         if ctx.author.id != self.owner_id:
-            await ctx.send("Nao tens permissoes para usar este comando.")
+            await ctx.send("❌ Nao tens permissoes para usar este comando.")
             return
 
         self.active = False
-        await ctx.send("Kyer control desativado!")
+        await ctx.send("✅ Kyer control desativo!")
+
+    @commands.command(name="setkyer")
+    async def setkyer(self, ctx, member: nextcord.Member):
+        if ctx.author.id != self.owner_id:
+            await ctx.send("❌ Nao tens permissoes para usar este comando.")
+            return
+
+        self.target_user_id = member.id
+        await ctx.send(f"✅ Utilizador set to {member.mention}.")
 
 def setup(bot):
     bot.add_cog(KyerControl(bot))
