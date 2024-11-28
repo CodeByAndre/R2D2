@@ -41,13 +41,18 @@ class KyerControl(commands.Cog):
         await ctx.send("✅ Kyer control desativo!")
 
     @commands.command(name="setkyer")
-    async def setkyer(self, ctx, member: nextcord.Member):
+    async def setkyer(self, ctx, user_id: int):
         if ctx.author.id != self.owner_id:
             await ctx.send("❌ Nao tens permissoes para usar este comando.")
             return
 
-        self.target_user_id = member.id
-        await ctx.send(f"✅ Utilizador set to {member.mention}.")
+        guild = ctx.guild
+        member = guild.get_member(user_id)
+        if member:
+            self.target_user_id = user_id
+            await ctx.send(f"✅ Utilizador setado para {member.mention}.")
+        else:
+            await ctx.send("❌ Não foi possível encontrar o utilizador com o ID fornecido.")
 
 def setup(bot):
     bot.add_cog(KyerControl(bot))
