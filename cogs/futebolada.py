@@ -113,6 +113,36 @@ class Futebolada(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def futeboladarandom(self, ctx):
+        guild_id = str(ctx.guild.id)
+        players = list(self.collection.find({"guild_id": guild_id}))
+
+        if len(players) < 4:
+            await ctx.send("Por favor, adicione pelo menos 4 jogadores com habilidades.")
+            return
+
+        player_names = [player["name"] for player in players]
+        random.shuffle(player_names)
+
+        midpoint = len(player_names) // 2
+        team_1 = player_names[:midpoint]
+        team_2 = player_names[midpoint:]
+
+        embed = nextcord.Embed(title="Equipas Aleatórias da Futebolada", color=nextcord.Color.orange())
+        embed.add_field(
+            name="EQUIPA 1",
+            value="\n".join(team_1),
+            inline=True
+        )
+        embed.add_field(
+            name="EQUIPA 2",
+            value="\n".join(team_2),
+            inline=True
+        )
+
+        await ctx.send(embed=embed)
+
     def balance_teams(self, skill_groups):
         random.shuffle(skill_groups["bom"])
         random.shuffle(skill_groups["medio"])
