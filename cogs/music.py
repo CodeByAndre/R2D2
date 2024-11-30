@@ -17,7 +17,7 @@ YDL_OPTIONS = {
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'opus',
-        'preferredquality': '192',
+        'preferredquality': '384',
     }],
     'quiet': True,
     'default_search': 'auto',
@@ -144,7 +144,7 @@ class Music(commands.Cog):
         guild_data = self.get_guild_data(ctx.guild.id)
         if guild_data["queue"]:
             next_song = guild_data["queue"].pop(0)
-            await self.play_song(ctx, next_song)
+            await self.play_song(ctx, next_song[0])
         else:
             guild_data["is_playing"] = False
             if ctx.voice_client:
@@ -166,9 +166,9 @@ class Music(commands.Cog):
             guild_data["is_playing"] = True
             await self.play_song(ctx, query)
         else:
-            guild_data["queue"].append(query)
             audio_url, info = await self.fetch_audio_url(query)
             if audio_url and info:
+                guild_data["queue"].append((query, info))
                 embed = Embed(
                     title="🎵 Música adicionada à fila",
                     description=f"[{info['title']}]({info['webpage_url']})",
@@ -185,8 +185,7 @@ class Music(commands.Cog):
             await ctx.send("❌ A fila está vazia.", delete_after=5)
         else:
             embed = Embed(title="🎵 Fila de músicas", color=nextcord.Color.green())
-            for i, query in enumerate(guild_data["queue"], start=1):
-                _, info = await self.fetch_audio_url(query)
+            for i, (_, info) in enumerate(guild_data["queue"], start=1):
                 embed.add_field(name=f"{i}. {info['title']}", value=f"[Ouvir aqui]({info['webpage_url']})", inline=False)
             await ctx.send(embed=embed)
 
