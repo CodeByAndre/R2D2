@@ -12,7 +12,6 @@ ffmpeg_opts = {
 
 YDL_OPTIONS = {
     'format': 'bestaudio/best',
-    'extractaudio': True,
     'noplaylist': True,
     'keepvideo': False,
     'postprocessors': [{
