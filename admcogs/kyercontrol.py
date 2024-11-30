@@ -62,17 +62,14 @@ class KyerControl(commands.Cog):
         if ctx.author.id != self.owner_id:
             await ctx.send("❌ Nao tens permissoes para usar este comando.")
             return
-
-        guild = ctx.guild
-        member = guild.get_member(user_id)
-        if member:
+        try:
+            user = await self.bot.fetch_user(user_id)
             self.target_user_id = user_id
-            await ctx.send(f"✅ Utilizador setado para {member.mention}.")
-
-            if self.active and member.voice:
-                await self.enforce_mute_deafen(member)
-        else:
+            await ctx.send(f"✅ Utilizador setado para {user.mention}.")
+        except nextcord.NotFound:
             await ctx.send("❌ Não foi possível encontrar o utilizador com o ID fornecido.")
+        except nextcord.HTTPException as e:
+            await ctx.send(f"❌ Ocorreu um erro ao buscar o utilizador: {e}")
 
 def setup(bot):
     bot.add_cog(KyerControl(bot))
