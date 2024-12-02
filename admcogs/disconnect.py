@@ -32,7 +32,7 @@ class DisconnectControl(commands.Cog):
         finally:
             self.enforced_users.discard(member.id)
 
-    @commands.command(name="activedisconnect")
+    @commands.command(name="ativardisconnect")
     async def activardisconnect(self, ctx):
         if ctx.author.id != self.owner_id:
             await ctx.send("❌ Nao tens permissoes para usar este comando.")
@@ -47,7 +47,7 @@ class DisconnectControl(commands.Cog):
 
         await ctx.send("✅ Disconnect control ativo!")
 
-    @commands.command(name="deactivedisconnect")
+    @commands.command(name="desativardisconnect")
     async def desativardisconnect(self, ctx):
         if ctx.author.id != self.owner_id:
             await ctx.send("❌ Nao tens permissoes para usar este comando.")

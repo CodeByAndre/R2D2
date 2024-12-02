@@ -1,93 +1,153 @@
 import nextcord
 from nextcord.ext import commands
-from nextcord import Interaction, SlashOption, ButtonStyle
+from nextcord import Interaction, ButtonStyle
 from nextcord.ui import View, Button
 import logging
 
 logger = logging.getLogger("DiscordBot")
 
+
 class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.remove_command("help")
+        if "help" in self.bot.commands:
+            self.bot.remove_command("help")
 
-    @nextcord.slash_command(name="help", description="Displays the help menu.")
+    @nextcord.slash_command(name="help", description="Exibe o menu de ajuda.")
     async def help_command(self, interaction: Interaction):
-        embed = nextcord.Embed(
-            title="Help Menu",
-            description="Explore the available commands below:",
-            color=nextcord.Color.blurple(),
-        )
+        await interaction.response.defer(ephemeral=True)
 
-        embed.add_field(
-            name=":musical_note: | Music",
-            value="`play`, `queue`, `skip`, `pause`, `resume`, `stop`",
-            inline=False
-        )
+        async def show_initial_menu():
+            """Display the initial help menu."""
+            embed = nextcord.Embed(
+                title="Menu de Ajuda",
+                description="Explore os comandos disponíveis abaixo:",
+                color=nextcord.Color.blurple(),
+            )
+            embed.add_field(
+                name=":musical_note: | Música",
+                value="`play`, `queue`, `skip`, `pause`, `resume`, `stop`",
+                inline=False,
+            )
+            embed.add_field(
+                name=":game_die: | Jogos",
+                value=(
+                    "`galo` - Inicia o jogo\n"
+                    "`futebolada` - Cria equipas\n"
+                    "  ↳ `player` - Adiciona um jogador\n"
+                    "  ↳ `rplayer` - Remove um jogador\n"
+                    "  ↳ `players` - Lista todos os jogadores"
+                ),
+                inline=False,
+            )
+            embed.add_field(
+                name=":speech_balloon: | Geral",
+                value=(
+                    "`ping` - Verifica a latência do bot\n"
+                    "`invite` - Convida o bot\n"
+                    "`translate` - Traduza palavras/frases\n"
+                    "`txt` - Ajuda de texto com IA\n"
+                    "`img` - Criador de imagens com IA\n"
+                    "`acordar` - Move um utilizador entre canais de voz\n"
+                ),
+                inline=False,
+            )
+            embed.set_footer(text="Prefixo: /")
 
-        embed.add_field(
-            name=":game_die: | Games",
-            value=(
-                "`galo` - Start the game\n"
-                "`futebolada` - Create teams\n"
-                "  ↳ `player` - Add a player\n"
-                "  ↳ `rplayer` - Remove a player\n"
-                "  ↳ `players` - List all players"
-            ),
-            inline=False
-        )
+            view = View(timeout=180)
 
-        embed.add_field(
-            name=":speech_balloon: | General",
-            value="`ping` - Check bot latency",
-            inline=False
-        )
+            botao_admin = Button(label="Comandos de Admin", style=ButtonStyle.red)
+            botao_owner = Button(label="Comandos do Dono", style=ButtonStyle.green)
 
-        prefix = "/"
-        embed.set_footer(text=f"Prefix: {prefix}")
+            async def botao_admin_callback(interaction: Interaction):
+                if interaction.user.guild_permissions.administrator:
+                    await send_admin_commands_dm(interaction)
+                else:
+                    await interaction.response.send_message(
+                        "⚠️ Não tens permissões para ver estes comandos.", ephemeral=True
+                    )
 
-        admin_button = Button(label="Admin Commands", style=ButtonStyle.red)
+            async def botao_owner_callback(interaction: Interaction):
+                if interaction.user.id == 516735882259333132:
+                    await send_owner_commands_dm(interaction)
+                else:
+                    await interaction.response.send_message(
+                        "⚠️ Apenas o dono do bot pode ver estes comandos.", ephemeral=True
+                    )
 
-        async def admin_button_callback(interaction: Interaction):
-            if interaction.user.id == 516735882259333132 or interaction.user.guild_permissions.administrator:
-                admin_embed = nextcord.Embed(
-                    title="Admin Commands",
-                    description="Here are the admin-specific commands:",
-                    color=nextcord.Color.red(),
-                )
-                admin_embed.add_field(
-                    name=":tools: | Admin Commands",
-                    value=(
-                        "`ban` - Ban a user\n"
-                        "`clean` - Delete messages\n"
-                        "`kick` - Kick a user\n"
-                        "`mutechannel` - Mute the current channel\n"
-                        "`reaction` - Add a reaction role\n"
-                        "`reboot` - Reboot the bot\n"
-                        "`unban` - Unban a user\n"
-                        "`prefix` - Change the bot's prefix\n"
-                        "`welcome` - Set a welcome message"
-                    ),
-                    inline=False
-                )
-                admin_embed.set_footer(
-                    text="Os comandos de admin estão restritos apenas para adminitradores."
-                )
-                logger.info(f"Slash command 'help' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name} para ver os comandos de admin.")
-                await interaction.response.send_message(embed=admin_embed, ephemeral=True)
-            else:
-                logger.warning(f"Slash command 'help' negado para {interaction.user} no server {interaction.guild.name}#{interaction.channel.name} devido a permissões insuficientes.")
+            botao_admin.callback = botao_admin_callback
+            botao_owner.callback = botao_owner_callback
+
+            view.add_item(botao_admin)
+            if interaction.user.id == 516735882259333132:
+                view.add_item(botao_owner)
+
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+
+        async def send_admin_commands_dm(interaction: Interaction):
+            """Send admin commands directly to the user's DM."""
+            admin_embed = nextcord.Embed(
+                title="Comandos de Admin",
+                description="Aqui estão os comandos exclusivos para administradores:",
+                color=nextcord.Color.red(),
+            )
+            admin_embed.add_field(
+                name=":tools: | Comandos de Admin",
+                value=(
+                    "`ban` - Banir um utilizador\n"
+                    "`unban` - Revogar banimento de um utilizador\n"
+                    "`clean` - Apagar mensagens\n"
+                    "`kick` - Expulsar um utilizador\n"
+                    "`mutechannel` - Silenciar o canal atual\n"
+                    "`reaction` - Adicionar um papel de reação\n"
+                    "`reboot` - Reiniciar o bot\n"
+                    "`prefix` - Alterar o prefixo do bot\n"
+                    "`setwelcome` - Configurar uma mensagem de boas-vindas"
+                ),
+                inline=False,
+            )
+            admin_embed.set_footer(text="Os comandos de admin estão restritos apenas para administradores.")
+
+            try:
+                await interaction.user.send(embed=admin_embed)
+                await interaction.response.send_message("✅ Os comandos de admin foram enviados para sua DM!", ephemeral=True)
+            except nextcord.Forbidden:
                 await interaction.response.send_message(
-                    "⚠️ Não tens permissões para ver estes comandos.", ephemeral=True
+                    "⚠️ Não consegui enviar uma mensagem para sua DM. Verifique se está habilitado.", ephemeral=True
                 )
 
-        admin_button.callback = admin_button_callback
+        async def send_owner_commands_dm(interaction: Interaction):
+            """Send owner commands directly to the user's DM."""
+            owner_embed = nextcord.Embed(
+                title="Comandos do Dono",
+                description="Aqui estão os comandos exclusivos para o dono do bot:",
+                color=nextcord.Color.green(),
+            )
+            owner_embed.add_field(
+                name=":crown: | Comandos do Dono",
+                value=(
+                    "`ativardisconnect` - Impede alguém de conectar a canais de voz\n"
+                    "`desativardisconnect` - Remove a restrição de conexão\n"
+                    "`setdisconnect` - Configura a pessoa\n"
+                    "`ativarkyer` - Impede alguém de desmutar/undeafen\n"
+                    "`desativarkyer` - Remove a restrição de desmutar/undeafen\n"
+                    "`setkyer` - Configura a pessao\n"
+                    "`tm` - Executa comandos no terminal do servidor\n"
+                    "`reboot` - Reinicia o bot"
+                ),
+                inline=False,
+            )
+            owner_embed.set_footer(text="Os comandos do dono são restritos ao proprietário do bot.")
 
-        view = View()
-        view.add_item(admin_button)
+            try:
+                await interaction.user.send(embed=owner_embed)
+                await interaction.response.send_message("✅ Os comandos do dono foram enviados para sua DM!", ephemeral=True)
+            except nextcord.Forbidden:
+                await interaction.response.send_message(
+                    "⚠️ Não consegui enviar uma mensagem para sua DM. Verifique se está habilitado.", ephemeral=True
+                )
+        await show_initial_menu()
 
-        logger.info(f"Slash command 'help' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name}.")
-        await interaction.response.send_message(embed=embed, view=view)
 
 def setup(bot):
     bot.add_cog(Help(bot))
