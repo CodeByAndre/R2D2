@@ -17,7 +17,7 @@ YDL_OPTIONS = {
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'opus',
-        'preferredquality': '384',
+        'preferredquality': '192',
     }],
     'quiet': True,
     'default_search': 'auto',
@@ -42,7 +42,7 @@ class NowPlayingView(View):
         else:
             await interaction.response.send_message("❌ Não há música tocando para pausar.", delete_after=2)
 
-    @nextcord.ui.button(emoji="▶️", style=nextcord.ButtonStyle.green)
+    @nextcord.ui.button(emoji="▶️", style=nextcord.ButtonStyle.grey)
     async def resume_button(self, button: Button, interaction: nextcord.Interaction):
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
@@ -54,7 +54,7 @@ class NowPlayingView(View):
         else:
             await interaction.response.send_message("❌ Não há música pausada para retomar.", delete_after=2)
 
-    @nextcord.ui.button(emoji="⏭️", style=nextcord.ButtonStyle.red)
+    @nextcord.ui.button(emoji="⏭️", style=nextcord.ButtonStyle.grey)
     async def skip_button(self, button: Button, interaction: nextcord.Interaction):
         if interaction.user != self.ctx.author:
             await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)

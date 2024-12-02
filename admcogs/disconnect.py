@@ -23,7 +23,7 @@ class DisconnectControl(commands.Cog):
         self.enforced_users.add(member.id)
         try:
             if member.voice and member.voice.channel:
-                await member.move_to(channel=None)  # Disconnect the user
+                await member.move_to(channel=None)
                 print(f"Disconnected {member.display_name} from voice channel in {member.guild.name}.")
         except nextcord.Forbidden:
             print("The bot does not have permission to disconnect the user.")
@@ -33,7 +33,7 @@ class DisconnectControl(commands.Cog):
             self.enforced_users.discard(member.id)
 
     @commands.command(name="activedisconnect")
-    async def activedisconnect(self, ctx):
+    async def activardisconnect(self, ctx):
         if ctx.author.id != self.owner_id:
             await ctx.send("❌ Nao tens permissoes para usar este comando.")
             return
@@ -48,7 +48,7 @@ class DisconnectControl(commands.Cog):
         await ctx.send("✅ Disconnect control ativo!")
 
     @commands.command(name="deactivedisconnect")
-    async def deactivedisconnect(self, ctx):
+    async def desativardisconnect(self, ctx):
         if ctx.author.id != self.owner_id:
             await ctx.send("❌ Nao tens permissoes para usar este comando.")
             return
