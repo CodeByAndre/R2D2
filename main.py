@@ -129,7 +129,13 @@ async def on_ready():
         collection_reboot.delete_one({"_id": "reboot_status"})
         logger.info("Reboot status cleared from the database.")
 
-    await bot.sync_application_commands()
+    try:
+        await bot.sync_commands()
+        logger.info("Slash commands synced successfully!")
+    except Exception as e:
+        logger.error(f"Error syncing commands: {e}")
+
+    # Start changing status task
     change_status.start()
 
 
