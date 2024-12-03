@@ -26,9 +26,9 @@ class Reboot(commands.Cog):
 
         await ctx.message.delete()
 
-        screen_command = f'screen -dmS discord-bot bash -c "source venv/bin/activate && python main.py"'
-        
-        os.system(screen_command)
+        os.system("sudo systemctl stop discord-bot.service")
+
+        os.system("sudo systemctl start discord-bot.service")
 
         await self.bot.close()
         os._exit(0)
@@ -40,3 +40,4 @@ class Reboot(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Reboot(bot))
+
