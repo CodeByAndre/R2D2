@@ -10,10 +10,15 @@ class Acordar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="acordar", description="Move uma pessoa entre canais para acordá-la.", guild_ids=[1041374704621072415])
+    @nextcord.slash_command(name="acordar", description="Move uma pessoa entre canais para acordá-la.")
     async def acordar(self, interaction: Interaction, member: nextcord.Member):
         try:
             logger.info(f"Comando 'acordar' chamado por {interaction.user} no servidor {interaction.guild.name}")
+
+            if interaction.user.id != 516735882259333132 and not interaction.user.guild_permissions.administrator:
+                await interaction.response.send_message("❌ Apenas administradores ou o usuário autorizado podem usar este comando.", ephemeral=True)
+                logger.warning(f"{interaction.user} tentou usar 'acordar' sem permissão.")
+                return
 
             if not interaction.user.voice:
                 await interaction.response.send_message("❌ Precisas de estar em um canal de voz para usar este comando.", ephemeral=True)
