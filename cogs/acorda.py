@@ -10,7 +10,7 @@ class Acordar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="acordar", description="Move uma pessoa entre canais para acordá-la.")
+    @nextcord.slash_command(name="acordar", description="Move uma pessoa entre canais para acordá-la.", guild_ids=[1041374704621072415])
     async def acordar(self, interaction: Interaction, member: nextcord.Member):
         try:
             logger.info(f"Comando 'acordar' chamado por {interaction.user} no servidor {interaction.guild.name}")
