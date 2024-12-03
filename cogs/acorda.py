@@ -32,12 +32,14 @@ class Acordar(commands.Cog):
                 return
             member_channel = member.voice.channel
 
+            # Filtrar canais que o membro pode ver
             voice_channels = [
-                vc for vc in interaction.guild.voice_channels if vc != author_channel
+                vc for vc in interaction.guild.voice_channels
+                if vc != author_channel and vc.permissions_for(member).view_channel
             ]
             if not voice_channels:
-                await interaction.response.send_message("❌ Não há canais suficientes para mover o membro.", ephemeral=True)
-                logger.warning(f"{interaction.user} tentou usar 'acordar', mas não há canais disponíveis.")
+                await interaction.response.send_message("❌ Não há canais disponíveis que o membro pode ver.", ephemeral=True)
+                logger.warning(f"{interaction.user} tentou usar 'acordar', mas não há canais que `{member}` possa acessar.")
                 return
 
             await interaction.response.send_message(f"A ACORDAR ESTE BURRO `{member}`!")
@@ -45,7 +47,7 @@ class Acordar(commands.Cog):
 
             if member_channel == author_channel:
                 await member.move_to(voice_channels[0])
-                logger.info(f"O`{member}` esta a ser movido")
+                logger.info(f"O`{member}` está a ser movido")
 
             while True:
                 for vc in voice_channels:
@@ -60,7 +62,7 @@ class Acordar(commands.Cog):
 
                     await member.move_to(vc)
                     logger.info(f"Movendo `{member}` para o canal `{vc.name}`.")
-                    await asyncio.sleep(0.3)
+                    await asyncio.sleep(0.8)
 
         except Exception as e:
             logger.error(f"Erro no comando 'acordar': {e}")
