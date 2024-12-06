@@ -26,7 +26,13 @@ class TicTacToe(commands.Cog):
     async def galo(self, ctx, p2: nextcord.Member = None):
         if not p2:
             await ctx.send("Contra qual jogador queres jogar? Escolhe da lista abaixo:")
+
             members = [m for m in ctx.guild.members if m != self.bot.user and not m.bot]
+            if not members:
+                await ctx.send("❌ Não há jogadores disponíveis para jogar.")
+                return
+
+            members = members[:25]
             options = [nextcord.SelectOption(label=m.name, value=str(m.id)) for m in members]
 
             select = Select(placeholder="Escolhe um jogador", options=options)
@@ -50,6 +56,7 @@ class TicTacToe(commands.Cog):
 
         await ctx.send(f"A perguntar a {p2.mention} se aceita jogar...", delete_after=2)
         await self.ask_player(ctx, p2)
+
 
     async def ask_player(self, ctx, player2):
         buttons = [

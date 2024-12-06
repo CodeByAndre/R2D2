@@ -83,7 +83,7 @@ class DiscordLogHandler(logging.Handler):
 logger = logging.getLogger("DiscordBot")
 logger.setLevel(logging.DEBUG)
 
-file_handler = logging.FileHandler("bot.log")
+file_handler = logging.FileHandler("bot.log", encoding="utf-8")
 file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
 logger.addHandler(file_handler)
 
@@ -95,6 +95,7 @@ logger.addHandler(discord_handler)
 async def change_status():
     await bot.change_presence(activity=nextcord.Game(next(client_status)))
 
+# Bot events
 @bot.event
 async def on_ready():
     print(f"Bot conectado como {bot.user}!")
@@ -130,14 +131,12 @@ async def on_ready():
         logger.info("Reboot status cleared from the database.")
 
     try:
-        await bot.sync_commands()
+        await bot.sync_all_application_commands()
         logger.info("Slash commands synced successfully!")
     except Exception as e:
         logger.error(f"Error syncing commands: {e}")
 
-    # Start changing status task
     change_status.start()
-
 
 @bot.event
 async def on_command(ctx):
@@ -152,7 +151,6 @@ async def on_guild_join(guild):
     logger.info(f"Adicionado ao servidor {guild.name}. Prefixo padrão configurado para '/'.")
     if not collection_prefixes.find_one({"server_id": guild.id}):
         collection_prefixes.insert_one({"server_id": guild.id, "prefix": "/"})
-
 
 def load_cogs():
     for filename in os.listdir("./cogs"):
