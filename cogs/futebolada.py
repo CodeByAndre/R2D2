@@ -1,8 +1,9 @@
 import nextcord
 from nextcord.ext import commands
 from pymongo import MongoClient
-import random
 import os
+import random
+import difflib
 
 class Futebolada(commands.Cog):
     def __init__(self, bot):
@@ -140,6 +141,85 @@ class Futebolada(commands.Cog):
             value="\n".join(team_2),
             inline=True
         )
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def sync_players(self, ctx, *, player_list: str):
+        guild_id = str(ctx.guild.id)
+
+        # Parse da lista fornecida pelo usuário
+        confirmed_players = []
+        for line in player_list.strip().split("\n"):
+            parts = line.split()
+            if len(parts) >= 2:
+                name = " ".join(parts[:-1])  # Nome pode ter espaços
+                skill = parts[-1].lower()  # Última palavra é a habilidade
+                if skill in ["bom", "medio", "mau"]:
+                    confirmed_players.append({"name": name, "skill": skill})
+                else:
+                    await ctx.send(f"Habilidade inválida para {name}: {skill}. Use 'bom', 'medio' ou 'mau'.")
+                    return
+
+        # Obter jogadores do banco de dados
+        db_players = list(self.collection.find({"guild_id": guild_id}))
+
+        confirmed_names = [player["name"] for player in confirmed_players]
+        removed_players = []
+        updated_players = []
+
+        # Verificar jogadores na DB
+        for db_player in db_players:
+            db_name = db_player["name"]
+            match = difflib.get_close_matches(db_name, confirmed_names, n=1, cutoff=0.8)
+            if not match:
+                # Remover da DB se não estiver na lista confirmada
+                self.collection.delete_one({"_id": db_player["_id"]})
+                removed_players.append(db_name)
+            else:
+                # Atualizar habilidade se necessário
+                confirmed_player = next(
+                    (player for player in confirmed_players if player["name"] == match[0]), None
+                )
+                if confirmed_player and db_player["skill"] != confirmed_player["skill"]:
+                    self.collection.update_one(
+                        {"_id": db_player["_id"]},
+                        {"$set": {"skill": confirmed_player["skill"]}}
+                    )
+                    updated_players.append(f"{db_name} atualizado para {confirmed_player['skill']}")
+
+        # Adicionar novos jogadores confirmados
+        for player in confirmed_players:
+            if not any(
+                difflib.get_close_matches(player["name"], [p["name"] for p in db_players], n=1, cutoff=0.8)
+            ):
+                self.collection.insert_one(
+                    {"guild_id": guild_id, "name": player["name"], "skill": player["skill"]}
+                )
+                updated_players.append(f"{player['name']} ({player['skill']}) adicionado")
+
+        # Resumo da sincronização
+        embed = nextcord.Embed(
+            title="🔄 Sincronização de Jogadores",
+            color=nextcord.Color.blue()
+        )
+        if removed_players:
+            embed.add_field(
+                name="Jogadores Removidos",
+                value="\n".join(removed_players),
+                inline=False
+            )
+        else:
+            embed.add_field(name="Jogadores Removidos", value="Nenhum jogador removido.", inline=False)
+
+        if updated_players:
+            embed.add_field(
+                name="Atualizações/Adições",
+                value="\n".join(updated_players),
+                inline=False
+            )
+        else:
+            embed.add_field(name="Atualizações/Adições", value="Nenhuma atualização realizada.", inline=False)
 
         await ctx.send(embed=embed)
 
