@@ -8,3 +8,4 @@ deep-translator
 easy-pil
 pynacl
 openai
+ffmpeg
