@@ -3,6 +3,8 @@ from nextcord.ext import commands
 from nextcord import FFmpegPCMAudio, Embed
 from nextcord.ui import View, Button
 import yt_dlp as ytdl
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 import asyncio
 
 ffmpeg_opts = {
@@ -23,6 +25,15 @@ YDL_OPTIONS = {
     'default_search': 'auto',
     'source_address': '0.0.0.0'
 }
+
+# Configuração da API do Spotify
+SPOTIFY_CLIENT_ID = "be38d64ea628474096b1e8360544f93f"
+SPOTIFY_CLIENT_SECRET = "1aa3596ed0bd48a3be633f51bede616e"
+
+spotify = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+    client_id=SPOTIFY_CLIENT_ID,
+    client_secret=SPOTIFY_CLIENT_SECRET
+))
 
 class NowPlayingView(View):
     def __init__(self, music_cog, ctx):
@@ -66,7 +77,6 @@ class NowPlayingView(View):
         else:
             await interaction.response.send_message("❌ Não há música tocando para pular.", delete_after=2)
 
-
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -98,7 +108,24 @@ class Music(commands.Cog):
             print(f"Error fetching audio URL: {e}")
             return None, None
 
+    async def fetch_spotify_playlist(self, playlist_url):
+        try:
+            results = spotify.playlist_items(playlist_url)
+            tracks = results["items"]
+            songs = []
+
+            for track in tracks:
+                track_name = track["track"]["name"]
+                artist_name = track["track"]["artists"][0]["name"]
+                songs.append(f"{artist_name} - {track_name}")
+
+            return songs
+        except Exception as e:
+            print(f"Erro ao buscar playlist do Spotify: {e}")
+            return None
+
     async def play_song(self, ctx, query):
+        
         guild_data = self.get_guild_data(ctx.guild.id)
         if not ctx.voice_client:
             await ctx.send("❌ O bot não está conectado a um canal de voz.", delete_after=5)
@@ -162,21 +189,34 @@ class Music(commands.Cog):
         if not ctx.voice_client:
             await ctx.author.voice.channel.connect()
 
-        if not guild_data["is_playing"]:
-            guild_data["is_playing"] = True
-            await self.play_song(ctx, query)
+        if "spotify.com/playlist" in query:
+            await ctx.send("🔍 A buscar músicas na playlist do Spotify...")
+            songs = await self.fetch_spotify_playlist(query)
+            if not songs:
+                await ctx.send("❌ Não foi possível obter a playlist do Spotify.", delete_after=5)
+                return
+            for song in songs:
+                guild_data["queue"].append((song, None))
+            await ctx.send(f"✅ Playlist adicionada com {len(songs)} músicas!")
+            if not guild_data["is_playing"]:
+                guild_data["is_playing"] = True
+                await self.play_song(ctx, guild_data["queue"].pop(0)[0])
         else:
-            audio_url, info = await self.fetch_audio_url(query)
-            if audio_url and info:
-                guild_data["queue"].append((query, info))
-                embed = Embed(
-                    title="🎵 Música adicionada à fila",
-                    description=f"[{info['title']}]({info['webpage_url']})",
-                    color=nextcord.Color.purple()
-                )
-                await ctx.send(embed=embed)
+            if not guild_data["is_playing"]:
+                guild_data["is_playing"] = True
+                await self.play_song(ctx, query)
             else:
-                await ctx.send("❌ Não foi possível adicionar a música.", delete_after=5)
+                audio_url, info = await self.fetch_audio_url(query)
+                if audio_url and info:
+                    guild_data["queue"].append((query, info))
+                    embed = Embed(
+                        title="🎵 Música adicionada à fila",
+                        description=f"[{info['title']}]({info['webpage_url']})",
+                        color=nextcord.Color.purple()
+                    )
+                    await ctx.send(embed=embed)
+                else:
+                    await ctx.send("❌ Não foi possível adicionar a música.", delete_after=5)
 
     @commands.command()
     async def queue(self, ctx):
@@ -185,8 +225,12 @@ class Music(commands.Cog):
             await ctx.send("❌ A fila está vazia.", delete_after=5)
         else:
             embed = Embed(title="🎵 Fila de músicas", color=nextcord.Color.green())
-            for i, (_, info) in enumerate(guild_data["queue"], start=1):
-                embed.add_field(name=f"{i}. {info['title']}", value=f"[Ouvir aqui]({info['webpage_url']})", inline=False)
+            for i, (query, info) in enumerate(guild_data["queue"], start=1):
+                # Se a música veio de uma playlist do Spotify, 'info' será None
+                if info:
+                    embed.add_field(name=f"{i}. {info['title']}", value=f"[Ouvir aqui]({info['webpage_url']})", inline=False)
+                else:
+                    embed.add_field(name=f"{i}. {query}", value="Adicionado da playlist do Spotify", inline=False)
             await ctx.send(embed=embed)
 
     @commands.command()
@@ -200,7 +244,6 @@ class Music(commands.Cog):
             await ctx.send("🛑 Música parada e desconectado do canal de voz.", delete_after=5)
         else:
             await ctx.send("❌ O bot não está tocando música.", delete_after=5)
-
 
 def setup(bot):
     bot.add_cog(Music(bot))
