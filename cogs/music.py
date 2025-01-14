@@ -1,11 +1,46 @@
+import os
+from dotenv import load_dotenv
+from pymongo import MongoClient
 import nextcord
 from nextcord.ext import commands
-from nextcord import FFmpegPCMAudio, Embed
+from nextcord import FFmpegPCMAudio, Embed, Interaction
 from nextcord.ui import View, Button
 import yt_dlp as ytdl
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import asyncio
+
+load_dotenv()
+
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("MONGO_URI não encontrado no arquivo .env!")
+
+client = MongoClient(MONGO_URI)
+db = client["R2D2BotDB"]
+collection = db["keys"]
+
+def get_spotify_credentials():
+    try:
+        credentials = collection.find_one({"name": "spotify"})
+        if not credentials:
+            print("⚠️ Credenciais do Spotify não encontradas na coleção 'keys'!")
+            return None, None
+        return credentials["client_id"], credentials["client_secret"]
+    except Exception as e:
+        print(f"Erro ao buscar credenciais do Spotify: {e}")
+        return None, None
+
+SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET = get_spotify_credentials()
+
+if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
+    print("❌ Credenciais do Spotify não foram carregadas. O recurso do Spotify estará desativado.")
+    spotify = None
+else:
+    spotify = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+        client_id=SPOTIFY_CLIENT_ID,
+        client_secret=SPOTIFY_CLIENT_SECRET
+    ))
 
 ffmpeg_opts = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -reconnect_on_network_error 1',
@@ -26,15 +61,6 @@ YDL_OPTIONS = {
     'source_address': '0.0.0.0'
 }
 
-# Configuração da API do Spotify
-SPOTIFY_CLIENT_ID = "be38d64ea628474096b1e8360544f93f"
-SPOTIFY_CLIENT_SECRET = "1aa3596ed0bd48a3be633f51bede616e"
-
-spotify = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-    client_id=SPOTIFY_CLIENT_ID,
-    client_secret=SPOTIFY_CLIENT_SECRET
-))
-
 class NowPlayingView(View):
     def __init__(self, music_cog, ctx):
         super().__init__(timeout=None)
@@ -43,36 +69,36 @@ class NowPlayingView(View):
 
     @nextcord.ui.button(emoji="⏸️", style=nextcord.ButtonStyle.grey)
     async def pause_button(self, button: Button, interaction: nextcord.Interaction):
-        if interaction.user != self.ctx.author:
+        if interaction.user != self.ctx.user:
             await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
             return
 
-        if self.ctx.voice_client and self.ctx.voice_client.is_playing():
-            self.ctx.voice_client.pause()
+        if self.ctx.guild.voice_client and self.ctx.guild.voice_client.is_playing():
+            self.ctx.guild.voice_client.pause()
             await interaction.response.send_message("⏸️ Música pausada.", delete_after=2)
         else:
             await interaction.response.send_message("❌ Não há música tocando para pausar.", delete_after=2)
 
     @nextcord.ui.button(emoji="▶️", style=nextcord.ButtonStyle.grey)
     async def resume_button(self, button: Button, interaction: nextcord.Interaction):
-        if interaction.user != self.ctx.author:
+        if interaction.user != self.ctx.user:
             await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
             return
 
-        if self.ctx.voice_client and self.ctx.voice_client.is_paused():
-            self.ctx.voice_client.resume()
+        if self.ctx.guild.voice_client and self.ctx.guild.voice_client.is_paused():
+            self.ctx.guild.voice_client.resume()
             await interaction.response.send_message("▶️ Música retomada.", delete_after=2)
         else:
             await interaction.response.send_message("❌ Não há música pausada para retomar.", delete_after=2)
 
     @nextcord.ui.button(emoji="⏭️", style=nextcord.ButtonStyle.grey)
     async def skip_button(self, button: Button, interaction: nextcord.Interaction):
-        if interaction.user != self.ctx.author:
+        if interaction.user != self.ctx.user:
             await interaction.response.send_message("⚠️ Apenas quem iniciou a música pode usar este botão.", ephemeral=True)
             return
 
-        if self.ctx.voice_client and self.ctx.voice_client.is_playing():
-            self.ctx.voice_client.stop()
+        if self.ctx.guild.voice_client and self.ctx.guild.voice_client.is_playing():
+            self.ctx.guild.voice_client.stop()
             await interaction.response.send_message("⏭️ Música pulada.", delete_after=2)
         else:
             await interaction.response.send_message("❌ Não há música tocando para pular.", delete_after=2)
@@ -124,26 +150,29 @@ class Music(commands.Cog):
             print(f"Erro ao buscar playlist do Spotify: {e}")
             return None
 
-    async def play_song(self, ctx, query):
-        
-        guild_data = self.get_guild_data(ctx.guild.id)
-        if not ctx.voice_client:
-            await ctx.send("❌ O bot não está conectado a um canal de voz.", delete_after=5)
+    async def play_song(self, interaction: Interaction, query):
+        guild_data = self.get_guild_data(interaction.guild.id)
+        if not interaction.guild.voice_client:
+            await interaction.followup.send("❌ O bot não está conectado a um canal de voz.", delete_after=5)
             guild_data["is_playing"] = False
             return
 
-        search_msg = await ctx.send("🔍 A procura da música, aguarde...")
+        if not guild_data.get("now_playing_message"):
+            message = await interaction.followup.send("🔍 A procura da música, aguarde...")
+            guild_data["now_playing_message"] = message
+        else:
+            message = guild_data["now_playing_message"]
+
         audio_url, info = await self.fetch_audio_url(query)
 
         if audio_url and info:
             audio_source = FFmpegPCMAudio(audio_url, **ffmpeg_opts)
-            ctx.voice_client.play(
+            interaction.guild.voice_client.play(
                 audio_source,
-                after=lambda e: asyncio.run_coroutine_threadsafe(self.handle_song_end(ctx), self.bot.loop)
+                after=lambda e: asyncio.run_coroutine_threadsafe(self.handle_song_end(interaction), self.bot.loop)
             )
 
-            guild_data["current_ctx"] = ctx
-            await search_msg.delete()
+            guild_data["current_ctx"] = interaction
 
             embed = Embed(
                 title="🎵 Now Playing",
@@ -155,16 +184,13 @@ class Music(commands.Cog):
             if 'thumbnail' in info:
                 embed.set_thumbnail(url=info['thumbnail'])
 
-            view = NowPlayingView(self, ctx)
+            view = NowPlayingView(self, interaction)
 
-            if guild_data["now_playing_message"]:
-                await guild_data["now_playing_message"].edit(embed=embed, view=view)
-            else:
-                guild_data["now_playing_message"] = await ctx.send(embed=embed, view=view)
+            await message.edit(content=None, embed=embed, view=view)
         else:
-            await ctx.send("❌ Não foi possível encontrar a música.", delete_after=5)
-            if ctx.voice_client:
-                await ctx.voice_client.disconnect()
+            await message.edit(content="❌ Não foi possível encontrar a música.")
+            if interaction.guild.voice_client:
+                await interaction.guild.voice_client.disconnect()
             guild_data["is_playing"] = False
 
     async def handle_song_end(self, ctx):
@@ -178,33 +204,34 @@ class Music(commands.Cog):
                 await ctx.voice_client.disconnect()
             await ctx.send("✅ A fila de músicas acabou. Desconectando...", delete_after=5)
 
-    @commands.command()
-    async def play(self, ctx, *, query: str):
-        guild_data = self.get_guild_data(ctx.guild.id)
+    @nextcord.slash_command(name="play", description="Toca uma música ou playlist")
+    async def play(self, interaction: Interaction, *, query: str):
+        guild_data = self.get_guild_data(interaction.guild.id)
 
-        if not ctx.author.voice:
-            await ctx.send("❌ Precisas de estar em um canal de voz!", delete_after=5)
+        if not interaction.user.voice:
+            await interaction.response.send_message("❌ Precisas de estar em um canal de voz!", delete_after=5)
             return
 
-        if not ctx.voice_client:
-            await ctx.author.voice.channel.connect()
+        if not interaction.guild.voice_client:
+            await interaction.user.voice.channel.connect()
+
+        message = await interaction.response.send_message("🔍 A buscar músicas na playlist do Spotify...")
 
         if "spotify.com/playlist" in query:
-            await ctx.send("🔍 A buscar músicas na playlist do Spotify...")
             songs = await self.fetch_spotify_playlist(query)
             if not songs:
-                await ctx.send("❌ Não foi possível obter a playlist do Spotify.", delete_after=5)
+                await message.edit(content="❌ Não foi possível obter a playlist do Spotify.")
                 return
             for song in songs:
                 guild_data["queue"].append((song, None))
-            await ctx.send(f"✅ Playlist adicionada com {len(songs)} músicas!")
+            await message.edit(content=f"✅ Playlist adicionada com {len(songs)} músicas!")
             if not guild_data["is_playing"]:
                 guild_data["is_playing"] = True
-                await self.play_song(ctx, guild_data["queue"].pop(0)[0])
+                await self.play_song(interaction, guild_data["queue"].pop(0)[0])
         else:
             if not guild_data["is_playing"]:
                 guild_data["is_playing"] = True
-                await self.play_song(ctx, query)
+                await self.play_song(interaction, query)
             else:
                 audio_url, info = await self.fetch_audio_url(query)
                 if audio_url and info:
@@ -214,11 +241,11 @@ class Music(commands.Cog):
                         description=f"[{info['title']}]({info['webpage_url']})",
                         color=nextcord.Color.purple()
                     )
-                    await ctx.send(embed=embed)
+                    await message.edit(embed=embed)
                 else:
-                    await ctx.send("❌ Não foi possível adicionar a música.", delete_after=5)
+                    await message.edit(content="❌ Não foi possível adicionar a música.")
 
-    @commands.command()
+    @nextcord.slash_command(name="queue", description="Exibe a fila de músicas")
     async def queue(self, ctx):
         guild_data = self.get_guild_data(ctx.guild.id)
         if not guild_data["queue"]:
@@ -226,24 +253,25 @@ class Music(commands.Cog):
         else:
             embed = Embed(title="🎵 Fila de músicas", color=nextcord.Color.green())
             for i, (query, info) in enumerate(guild_data["queue"], start=1):
-                # Se a música veio de uma playlist do Spotify, 'info' será None
                 if info:
                     embed.add_field(name=f"{i}. {info['title']}", value=f"[Ouvir aqui]({info['webpage_url']})", inline=False)
                 else:
                     embed.add_field(name=f"{i}. {query}", value="Adicionado da playlist do Spotify", inline=False)
             await ctx.send(embed=embed)
 
-    @commands.command()
-    async def stop(self, ctx):
-        guild_data = self.get_guild_data(ctx.guild.id)
-        if ctx.voice_client:
-            ctx.voice_client.stop()
+    @nextcord.slash_command(name="stop", description="Para a música e limpa a fila")
+    async def stop(self, interaction: Interaction):
+        guild_data = self.get_guild_data(interaction.guild.id)
+        voice_client = interaction.guild.voice_client
+
+        if voice_client:
+            voice_client.stop()
             guild_data["queue"].clear()
             guild_data["is_playing"] = False
-            await ctx.voice_client.disconnect()
-            await ctx.send("🛑 Música parada e desconectado do canal de voz.", delete_after=5)
+            await voice_client.disconnect()
+            await interaction.response.send_message("🛑 Música parada e desconectado do canal de voz.", delete_after=5)
         else:
-            await ctx.send("❌ O bot não está tocando música.", delete_after=5)
+            await interaction.response.send_message("❌ O bot não está tocando música.", delete_after=5)
 
 def setup(bot):
     bot.add_cog(Music(bot))
