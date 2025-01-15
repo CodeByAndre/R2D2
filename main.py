@@ -70,26 +70,23 @@ async def on_ready():
     print(f"Bot conectado como {bot.user}!")
     logger.info(f"Bot conectado como {bot.user}!")
 
-     # Lista os comandos registrados
     try:
         registered_commands = await bot.tree.fetch_commands()
         for command in registered_commands:
-            print(f"Comando registrado: {command.name}")  # Mantido para ver os comandos carregados
+            print(f"Comando registrado: {command.name}")
             logger.info(f"Comando registrado: {command.name}")
     except Exception as e:
         print(f"Erro ao listar comandos registrados: {e}")
         logger.error(f"Erro ao listar comandos registrados: {e}")
 
-    # Sincroniza os comandos globais
     try:
         await bot.tree.sync()
-        print("Comandos slash sincronizados com sucesso!")  # Mantido para confirmar sincronização
+        print("Comandos slash sincronizados com sucesso!")
         logger.info("Comandos slash sincronizados com sucesso!")
     except Exception as e:
         print(f"Erro ao sincronizar comandos slash: {e}")
         logger.error(f"Erro ao sincronizar comandos slash: {e}")
 
-    # Verifica o status de reinicialização
     collection_reboot = db["reboot_status"]
     reboot_status = collection_reboot.find_one({"_id": "reboot_status"})
 
@@ -140,7 +137,7 @@ def load_cogs():
         if filename.endswith(".py"):
             try:
                 bot.load_extension(f"cogs.{filename[:-3]}")
-                print(f"Cog {filename} carregado com sucesso!")  # Mantido para ver os cogs carregados
+                print(f"Cog {filename} carregado com sucesso!")
                 logger.info(f"Cog {filename} carregado com sucesso!")
             except Exception as e:
                 print(f"Erro ao carregar o cog {filename}: {e}")
@@ -150,7 +147,7 @@ def load_cogs():
         if filename.endswith(".py"):
             try:
                 bot.load_extension(f"admcogs.{filename[:-3]}")
-                print(f"Admin Cog {filename} carregado com sucesso!")  # Mantido para ver os admin cogs carregados
+                print(f"Admin Cog {filename} carregado com sucesso!")
                 logger.info(f"Admin Cog {filename} carregado com sucesso!")
             except Exception as e:
                 print(f"Erro ao carregar o admin cog {filename}: {e}")
