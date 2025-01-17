@@ -20,7 +20,7 @@ class CurrencyConverter(commands.Cog):
         self.api_key = api_key_entry["value"]
         self.api_url = f"https://v6.exchangerate-api.com/v6/{self.api_key}/latest"
 
-    @nextcord.slash_command(name="convert", description="Converts currency from one type to another.")
+    @nextcord.slash_command(name="convert", description="Converte moedas em tempo real.")
     async def convert(self, interaction: nextcord.Interaction, amount: float, from_currency: str, to_currency: str):
         from_currency = from_currency.upper()
         to_currency = to_currency.upper()

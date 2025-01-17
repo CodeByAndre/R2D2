@@ -1,6 +1,6 @@
 import nextcord
 from nextcord.ext import commands
-from nextcord import File
+from nextcord import File, Interaction, SlashOption
 from easy_pil import Editor, load_image_async, Font
 from pymongo import MongoClient
 import os
@@ -48,33 +48,41 @@ class Welcome(commands.Cog):
 
             file = File(fp=background.image_bytes, filename="welcome.jpg")
 
-            await channel.send(f"OLÁ! {member.mention}! BEM-VINDO ao **{server_name}**. Para mais informações vai a #rules.")
+            await channel.send(f"OLÁ! {member.mention}! BEM-VINDO ao **{server_name}**. Para mais informações lê o canal das regras.")
             await channel.send(file=file)
             
         except Exception as e:
             print(f"❌ An error occurred: {e}")
 
-    @commands.command(name='setwelcome')
+    @nextcord.slash_command(name="setwelcome", description="Configura o canal de boas-vindas.")
     @commands.has_permissions(administrator=True)
-    async def set_welcome_channel(self, ctx, channel: nextcord.TextChannel):
+    async def set_welcome_channel(
+        self,
+        interaction: Interaction,
+        channel: nextcord.TextChannel = SlashOption(
+            name="canal",
+            description="Mencione o canal de boas-vindas.",
+            required=True
+        )
+    ):
         try:
             self.collection.update_one(
-                {"server_id": ctx.guild.id},
+                {"server_id": interaction.guild.id},
                 {"$set": {"channel_id": channel.id}},
                 upsert=True
             )
-            await ctx.send(f"✅ O canal de boas-vindas foi configurado para {channel.mention}.")
+            await interaction.response.send_message(f"✅ O canal de boas-vindas foi configurado para {channel.mention}.")
         except Exception as e:
-            await ctx.send(f"❌ Ocorreu um erro ao salvar o canal de boas-vindas: {e}")
+            await interaction.response.send_message(f"❌ Ocorreu um erro ao salvar o canal de boas-vindas: {e}")
 
     @set_welcome_channel.error
-    async def set_welcome_channel_error(self, ctx, error):
+    async def set_welcome_channel_error(self, interaction: Interaction, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("❌ Apenas administradores podem usar este comando.")
+            await interaction.response.send_message("❌ Apenas administradores podem usar este comando.", ephemeral=True)
         elif isinstance(error, commands.BadArgument):
-            await ctx.send("❌ Por favor, menciona um canal válido.")
+            await interaction.response.send_message("❌ Por favor, mencione um canal válido.", ephemeral=True)
         else:
-            await ctx.send("❌ Ocorreu um erro ao processar o comando.")
+            await interaction.response.send_message("❌ Ocorreu um erro ao processar o comando.", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(Welcome(bot))

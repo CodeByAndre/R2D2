@@ -8,7 +8,7 @@ class Unban(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="unban", description="Unban a member of the server with the member ID.")
+    @nextcord.slash_command(name="unban", description="Unban um membro do servidor pelo ID.")
     async def unban(
         self,
         interaction: nextcord.Interaction,

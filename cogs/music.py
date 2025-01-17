@@ -78,7 +78,7 @@ class NowPlayingView(View):
 
             self.ctx.guild.voice_client.pause()
         else:
-            await interaction.response.send_message("❌ Não há música tocando para pausar.", ephemeral=True)
+            await interaction.response.send_message("❌ Não há música a tocar para pausar.", ephemeral=True)
 
     @nextcord.ui.button(emoji="▶️", style=nextcord.ButtonStyle.grey)
     async def resume_button(self, button: Button, interaction: nextcord.Interaction):
@@ -109,7 +109,7 @@ class NowPlayingView(View):
                 next_song = guild_data["queue"].pop(0)
                 await self.music_cog.play_song(self.ctx, next_song[0])
         else:
-            await interaction.response.send_message("❌ Não há música tocando para pular.", ephemeral=True)
+            await interaction.response.send_message("❌ Não há música a tocar para pular.", ephemeral=True)
 
 class QueueView(View):
     def __init__(self, queue, page=0, items_per_page=10):
@@ -137,7 +137,7 @@ class QueueView(View):
             await interaction.response.defer()
 
     def create_embed(self):
-        embed = Embed(title="🎵 Fila de músicas", color=nextcord.Color.green())
+        embed = Embed(title="🎵 Lista de músicas", color=nextcord.Color.green())
         start = self.page * self.items_per_page
         end = start + self.items_per_page
         for i, (query, info) in enumerate(self.queue[start:end], start=start + 1):
@@ -193,7 +193,7 @@ class Music(commands.Cog):
 
             return songs, playlist_name
         except Exception as e:
-            print(f"Erro ao buscar playlist do Spotify: {e}")
+            print(f"Erro ao procurar playlist do Spotify: {e}")
             return None, None
 
     async def play_song(self, interaction: Interaction, query):
@@ -227,7 +227,7 @@ class Music(commands.Cog):
             guild_data["current_ctx"] = interaction
 
             embed = Embed(
-                title="🎵 Now Playing",
+                title="🎵 A Tocar Agora",
                 description=info['title'],
                 color=nextcord.Color.blue()
             )
@@ -258,7 +258,7 @@ class Music(commands.Cog):
             guild_data["is_playing"] = False
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
-            await ctx.send("✅ A fila de músicas acabou. Desconectando...", delete_after=5)
+            await ctx.send("✅ A lista de músicas acabou. Desconectando...", delete_after=5)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -277,11 +277,11 @@ class Music(commands.Cog):
 
                 if guild_data.get("current_ctx"):
                     ctx = guild_data["current_ctx"]
-                    await ctx.send("❌ Fui desconectado do canal de voz. A queue foi limpa.", delete_after=5)
+                    await ctx.send("❌ Fui desconectado do canal de voz. A lista de musicas foi limpa.", delete_after=5)
                 else:
                     default_channel = member.guild.system_channel
                     if default_channel and default_channel.permissions_for(member.guild.me).send_messages:
-                        await default_channel.send("❌ Fui desconectado do canal de voz. A queue foi limpa.", delete_after=5)
+                        await default_channel.send("❌ Fui desconectado do canal de voz. A lista de musicas foi limpa.", delete_after=5)
 
                 guild_data["current_ctx"] = None
                 guild_data["now_playing_message"] = None
@@ -319,7 +319,7 @@ class Music(commands.Cog):
                 if audio_url and info:
                     guild_data["queue"].append((query, info))
                     embed = Embed(
-                        title="🎵 Música adicionada à fila",
+                        title="🎵 Música adicionada à lista",
                         description=f"[{info['title']}]({info['webpage_url']})",
                         color=nextcord.Color.purple()
                     )
@@ -327,17 +327,17 @@ class Music(commands.Cog):
                 else:
                     await message.edit(content="❌ Não foi possível adicionar a música.")
 
-    @nextcord.slash_command(name="queue", description="Exibe a fila de músicas")
+    @nextcord.slash_command(name="queue", description="Exibe a lista de músicas")
     async def queue(self, ctx):
         guild_data = self.get_guild_data(ctx.guild.id)
         if not guild_data["queue"]:
-            await ctx.send("❌ A fila está vazia.", delete_after=5)
+            await ctx.send("❌ A lista está vazia.", delete_after=5)
         else:
             view = QueueView(guild_data["queue"])
             embed = view.create_embed()
             await ctx.send(embed=embed, view=view)
  
-    @nextcord.slash_command(name="stop", description="Para a música e desconecta o bot")
+    @nextcord.slash_command(name="stop", description="Parar a música e desconectar o bot")
     async def stop(self, interaction: Interaction):
         guild_data = self.get_guild_data(interaction.guild.id)
         voice_client = interaction.guild.voice_client
@@ -350,7 +350,7 @@ class Music(commands.Cog):
 
             await interaction.response.send_message("🛑 Música parada e desconectado do canal de voz.", delete_after=5)
         else:
-            await interaction.response.send_message("❌ O bot não está tocando música.", delete_after=5)
+            await interaction.response.send_message("❌ O bot não está a tocar música.", delete_after=5)
 
     @nextcord.slash_command(name="skip_to", description="Pula para uma música específica na fila")
     async def skip_to(self, interaction: Interaction, index: int):

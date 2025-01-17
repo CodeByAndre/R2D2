@@ -26,9 +26,9 @@ class Reboot(commands.Cog):
 
         await ctx.message.delete()
 
-        os.system("sudo systemctl stop discord-bot.service")
+        os.system("sudo systemctl stop r2d2-bot.service")
 
-        os.system("sudo systemctl start discord-bot.service")
+        os.system("sudo systemctl start r2d2-bot.service")
 
         await self.bot.close()
         os._exit(0)

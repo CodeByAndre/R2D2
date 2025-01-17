@@ -9,7 +9,7 @@ class Avatar(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="avatar", description="Fetch and display the avatar of a user.")
+    @nextcord.slash_command(name="avatar", description="Mostrar avatar de um utilizador.")
     async def avatar(self, interaction: Interaction, member: nextcord.Member = None):
         member = member or interaction.user
 

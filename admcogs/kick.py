@@ -8,7 +8,7 @@ class Kick(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="kick", description="Kick a member of the server.")
+    @nextcord.slash_command(name="kick", description="Kick um membro.")
     async def kick(self, interaction: nextcord.Interaction, member: nextcord.Member, motivo: str = None):
         if interaction.user.id != 516735882259333132 and not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas os administradores podem usar este comando.", ephemeral=True)

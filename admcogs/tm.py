@@ -8,7 +8,7 @@ class Terminal(commands.Cog):
         self.bot = bot
         self.owner_id = 516735882259333132
 
-    @nextcord.slash_command(name="tm", description="Run terminal commands.")
+    @commands.command(name="tm")
     async def terminal_command(
         self,
         interaction: Interaction,

@@ -32,7 +32,6 @@ class Acordar(commands.Cog):
                 return
             member_channel = member.voice.channel
 
-            # Filtrar canais que o membro pode ver
             voice_channels = [
                 vc for vc in interaction.guild.voice_channels
                 if vc != author_channel and vc.permissions_for(member).view_channel

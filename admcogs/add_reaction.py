@@ -34,13 +34,13 @@ class ReactionRole(commands.Cog):
     def remove_reaction_role(self, message_id):
         self.collection.delete_one({"message_id": message_id})
 
-    @nextcord.slash_command(name="react", description="Creates a reaction role message.")
+    @nextcord.slash_command(name="react", description="Da uma role com reações.")
     async def react(
         self,
         interaction: Interaction,
-        message_text: str = SlashOption(description="Text to display in the message"),
-        emoji: str = SlashOption(description="Emoji to react with"),
-        role: nextcord.Role = SlashOption(description="Role to assign"),
+        message_text: str = SlashOption(description="Texto da mensagem"),
+        emoji: str = SlashOption(description="Emoji para reagir"),
+        role: nextcord.Role = SlashOption(description="Role a dar"),
     ):
         logger.info(
             f"Slash command 'react' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name}"
@@ -97,10 +97,6 @@ class ReactionRole(commands.Cog):
                             logger.info(
                                 f"{member} recebeu o cargo '{role.name}' no server {guild.name}#{channel.name} após reagir com {emoji}"
                             )
-                            await channel.send(
-                                f"{member.mention} foi adicionado ao cargo {role.name}.",
-                                delete_after=5,
-                            )
                         except Exception as e:
                             logger.error(f"Erro ao adicionar o cargo '{role.name}' para {member}: {e}")
 
@@ -121,10 +117,6 @@ class ReactionRole(commands.Cog):
                         channel = self.bot.get_channel(payload.channel_id)
                         logger.info(
                             f"{member} perdeu o cargo '{role.name}' no server {guild.name}#{channel.name} após remover a reação {emoji}"
-                        )
-                        await channel.send(
-                            f"{member.mention} foi removido do cargo {role.name}.",
-                            delete_after=5,
                         )
                     except Exception as e:
                         logger.error(f"Erro ao remover o cargo '{role.name}' para {member}: {e}")

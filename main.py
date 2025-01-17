@@ -54,12 +54,42 @@ bot = commands.Bot(command_prefix=get_prefix, intents=intents)
 
 client_status = cycle(['🔍 Pesquisas', '🤖 AI', '/help'])
 
+class DiscordLogHandler(logging.Handler):
+    def __init__(self, bot, channel_id):
+        super().__init__()
+        self.bot = bot
+        self.channel_id = channel_id
+        self.log_queue = []
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        channel = self.bot.get_channel(self.channel_id)
+
+        if not channel:
+            self.log_queue.append(log_entry)
+            print(f"Queued log: {log_entry}")
+            return
+
+        if self.log_queue:
+            for queued_log in self.log_queue:
+                self.bot.loop.create_task(channel.send(queued_log))
+            self.log_queue.clear()
+
+        try:
+            self.bot.loop.create_task(channel.send(log_entry))
+        except Exception as e:
+            print(f"Error sending log to Discord channel: {e}")
+
 logger = logging.getLogger("DiscordBot")
 logger.setLevel(logging.DEBUG)
 
 file_handler = logging.FileHandler("bot.log", encoding="utf-8")
 file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
 logger.addHandler(file_handler)
+
+discord_handler = DiscordLogHandler(bot, channel_id=1311749142401519616)
+discord_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+logger.addHandler(discord_handler)
 
 @tasks.loop(seconds=10)
 async def change_status():
@@ -71,21 +101,12 @@ async def on_ready():
     logger.info(f"Bot conectado como {bot.user}!")
 
     try:
-        registered_commands = await bot.tree.fetch_commands()
-        for command in registered_commands:
-            print(f"Comando registrado: {command.name}")
-            logger.info(f"Comando registrado: {command.name}")
+        await bot.sync_application_commands()
+        logger.info("Comandos de aplicação sincronizados com sucesso.")
+        print("Comandos de aplicação sincronizados com sucesso.")
     except Exception as e:
-        print(f"Erro ao listar comandos registrados: {e}")
-        logger.error(f"Erro ao listar comandos registrados: {e}")
-
-    try:
-        await bot.tree.sync()
-        print("Comandos slash sincronizados com sucesso!")
-        logger.info("Comandos slash sincronizados com sucesso!")
-    except Exception as e:
-        print(f"Erro ao sincronizar comandos slash: {e}")
-        logger.error(f"Erro ao sincronizar comandos slash: {e}")
+        logger.error(f"Erro ao sincronizar comandos de aplicação: {e}")
+        print(f"Erro ao sincronizar comandos de aplicação: {e}")
 
     collection_reboot = db["reboot_status"]
     reboot_status = collection_reboot.find_one({"_id": "reboot_status"})
@@ -138,20 +159,16 @@ def load_cogs():
             try:
                 bot.load_extension(f"cogs.{filename[:-3]}")
                 print(f"Cog {filename} carregado com sucesso!")
-                logger.info(f"Cog {filename} carregado com sucesso!")
             except Exception as e:
                 print(f"Erro ao carregar o cog {filename}: {e}")
-                logger.error(f"Erro ao carregar o cog {filename}: {e}")
 
     for filename in os.listdir("./admcogs"):
         if filename.endswith(".py"):
             try:
                 bot.load_extension(f"admcogs.{filename[:-3]}")
                 print(f"Admin Cog {filename} carregado com sucesso!")
-                logger.info(f"Admin Cog {filename} carregado com sucesso!")
             except Exception as e:
                 print(f"Erro ao carregar o admin cog {filename}: {e}")
-                logger.error(f"Erro ao carregar o admin cog {filename}: {e}")
 
 load_cogs()
 

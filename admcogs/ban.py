@@ -9,7 +9,7 @@ class Ban(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="ban", description="Ban a member from the server.")
+    @nextcord.slash_command(name="ban", description="Da ban a um membro.")
     async def ban(self, interaction: Interaction, member: nextcord.Member, reason: str = "Sem razão"):
         if interaction.user.id != 516735882259333132 and not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas os administradores podem usar este comando.", ephemeral=True)

@@ -9,7 +9,7 @@ class Translate(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="translate", description="Traduza o texto para o idioma especificado.")
+    @nextcord.slash_command(name="translate", description="Traduza o texto para o idioma especifico.")
     async def translate(
         self, 
         interaction: nextcord.Interaction, 
@@ -23,7 +23,7 @@ class Translate(commands.Cog):
                 description=translated,
                 color=nextcord.Color.blue()
             )
-            embed.set_footer(text="Powered by Google Translator")
+            embed.set_footer(text="R2D2 Bot")
             logger.info(f"Slash command 'translate' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name}. Texto traduzido para '{lang}': {text}")
             await interaction.response.send_message(embed=embed)
         except Exception as e:

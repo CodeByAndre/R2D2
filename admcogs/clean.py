@@ -9,7 +9,7 @@ class Clean(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @nextcord.slash_command(name="clean", description="Bulk delete messages from the current channel.")
+    @nextcord.slash_command(name="clean", description="Remove messagens do canal atual.")
     async def clean(self, interaction: Interaction, number: int):
         logger.info(
             f"Slash command 'clean' usado por {interaction.user} no server {interaction.guild.name}#{interaction.channel.name}"
