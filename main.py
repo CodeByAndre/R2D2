@@ -99,9 +99,13 @@ async def change_status():
 async def on_ready():
     print(f"Bot conectado como {bot.user}!")
     logger.info(f"Bot conectado como {bot.user}!")
+    
+    cog = bot.get_cog("TicketSystem")
+    if cog:
+        await cog.restore_ticket_buttons()
 
     try:
-        await bot.sync_application_commands()
+        await bot.sync_application_commands(guild_id=1303400665493667860)
         logger.info("Comandos de aplicação sincronizados com sucesso.")
         print("Comandos de aplicação sincronizados com sucesso.")
     except Exception as e:
